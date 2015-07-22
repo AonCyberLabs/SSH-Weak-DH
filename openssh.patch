@@ -1,0 +1,250 @@
+diff -u -b openssh-6.9p1/kex.c openssh-6.9p1-new/kex.c
+--- openssh-6.9p1/kex.c	2015-06-30 22:35:31.000000000 -0400
++++ openssh-6.9p1-new/kex.c	2015-07-20 11:45:14.548032764 -0400
+@@ -528,6 +528,8 @@
+ {
+ 	const struct kexalg *kexalg;
+ 
++  fprintf(stderr, "KEX proposal client: %s\nKEX proposal server: %s\n",
++      client, server);
+ 	k->name = match_list(client, server, NULL);
+ 
+ 	if (k->name == NULL)
+@@ -537,6 +539,9 @@
+ 	k->kex_type = kexalg->type;
+ 	k->hash_alg = kexalg->hash_alg;
+ 	k->ec_nid = kexalg->ec_nid;
++
++  fprintf(stderr, "KEX algorithm chosen: %s\n", k->name);
++
+ 	return 0;
+ }
+ 
+diff -u -b openssh-6.9p1/kexgexc.c openssh-6.9p1-new/kexgexc.c
+--- openssh-6.9p1/kexgexc.c	2015-06-30 22:35:31.000000000 -0400
++++ openssh-6.9p1-new/kexgexc.c	2015-07-20 11:45:14.548032764 -0400
+@@ -63,8 +63,9 @@
+ 
+ 	nbits = dh_estimate(kex->dh_need * 8);
+ 
+-	kex->min = DH_GRP_MIN;
+-	kex->max = DH_GRP_MAX;
++  /* Key bit parameters are already taken from command-line.
++   * Take the suggested nbits only if no reasonable nbits specified. */
++  if (kex->nbits < kex->min)
+ 	kex->nbits = nbits;
+ 	if (datafellows & SSH_BUG_DHGEX_LARGE)
+ 		kex->nbits = MIN(kex->nbits, 4096);
+@@ -81,6 +82,8 @@
+ 	fprintf(stderr, "\nmin = %d, nbits = %d, max = %d\n",
+ 	    kex->min, kex->nbits, kex->max);
+ #endif
++	fprintf(stderr, "KEX client group sizes: min = %d, nbits = %d, max = %d\n",
++	    kex->min, kex->nbits, kex->max);
+ 	ssh_dispatch_set(ssh, SSH2_MSG_KEX_DH_GEX_GROUP,
+ 	    &input_kex_dh_gex_group);
+ 	r = 0;
+@@ -118,6 +121,8 @@
+ 	}
+ 	p = g = NULL; /* belong to kex->dh now */
+ 
++  fprintf(stderr, "KEX server-chosen group size in bits: %d\n", bits);
++
+ 	/* generate and send 'e', client DH public key */
+ 	if ((r = dh_gen_key(kex->dh, kex->we_need * 8)) != 0 ||
+ 	    (r = sshpkt_start(ssh, SSH2_MSG_KEX_DH_GEX_INIT)) != 0 ||
+diff -u -b openssh-6.9p1/readconf.c openssh-6.9p1-new/readconf.c
+--- openssh-6.9p1/readconf.c	2015-06-30 22:35:31.000000000 -0400
++++ openssh-6.9p1-new/readconf.c	2015-07-20 11:45:14.548032764 -0400
+@@ -61,6 +61,7 @@
+ #include "uidswap.h"
+ #include "myproposal.h"
+ #include "digest.h"
++#include "dh.h"
+ 
+ /* Format of the configuration file:
+ 
+@@ -1676,6 +1677,10 @@
+ 	options->fingerprint_hash = -1;
+ 	options->update_hostkeys = -1;
+ 	options->hostbased_key_types = NULL;
++  /* Default values taken from dh.h */
++  options->dh_minbits = DH_GRP_MIN;
++  options->dh_nbits = 0;
++  options->dh_maxbits = DH_GRP_MAX;
+ }
+ 
+ /*
+diff -u -b openssh-6.9p1/readconf.h openssh-6.9p1-new/readconf.h
+--- openssh-6.9p1/readconf.h	2015-06-30 22:35:31.000000000 -0400
++++ openssh-6.9p1-new/readconf.h	2015-07-20 11:45:14.552032783 -0400
+@@ -153,6 +153,11 @@
+ 	char	*hostbased_key_types;
+ 
+ 	char	*ignored_unknown; /* Pattern list of unknown tokens to ignore */
++
++  /* Diffie-Hellman key exchange bits */
++  int dh_minbits;
++  int dh_nbits;
++  int dh_maxbits;
+ }       Options;
+ 
+ #define SSH_CANONICALISE_NO	0
+diff -u -b openssh-6.9p1/ssh.c openssh-6.9p1-new/ssh.c
+--- openssh-6.9p1/ssh.c	2015-06-30 22:35:31.000000000 -0400
++++ openssh-6.9p1-new/ssh.c	2015-07-20 11:45:14.552032783 -0400
+@@ -194,8 +194,24 @@
+ extern int muxserver_sock;
+ extern u_int muxclient_command;
+ 
+-/* Prints a help message to the user.  This function never returns. */
++enum
++{
++  DH_MIN_BITS = 0,
++  DH_N_BITS,
++  DH_MAX_BITS,
++  THE_END
++};
++
++/* Diffie-Hellman key exchange parameters */
++static char *const dh_bit_opts[] =
++{
++  [DH_MIN_BITS] = "minbits",
++  [DH_N_BITS] = "nbits",
++  [DH_MAX_BITS] = "maxbits",
++  [THE_END] = NULL
++};
+ 
++/* Prints a help message to the user.  This function never returns. */
+ static void
+ usage(void)
+ {
+@@ -355,6 +371,7 @@
+ 		return 0;
+ 	debug3("%s: check \"%s\" CNAME \"%s\"", __func__, *namep, cname);
+ 	for (i = 0; i < options.num_permitted_cnames; i++) {
++
+ 		rule = options.permitted_cnames + i;
+ 		if (match_pattern_list(*namep, rule->source_list, 1) != 1 ||
+ 		    match_pattern_list(cname, rule->target_list, 1) != 1)
+@@ -516,6 +533,7 @@
+ 	struct ssh_digest_ctx *md;
+ 	u_char conn_hash[SSH_DIGEST_MAX_LENGTH];
+ 	char *conn_hash_hex;
++  char *subopts, *value;
+ 
+ 	/* Ensure that fds 0, 1 and 2 are open or directed to /dev/null */
+ 	sanitise_stdfd();
+@@ -594,7 +612,7 @@
+ 	argv0 = av[0];
+ 
+  again:
+-	while ((opt = getopt(ac, av, "1246ab:c:e:fgi:kl:m:no:p:qstvx"
++	while ((opt = getopt(ac, av, "1246ab:c:d:e:fgi:kl:m:no:p:qstvx"
+ 	    "ACD:E:F:GI:KL:MNO:PQ:R:S:TVw:W:XYy")) != -1) {
+ 		switch (opt) {
+ 		case '1':
+@@ -695,6 +713,30 @@
+ 		case 'A':
+ 			options.forward_agent = 1;
+ 			break;
++    case 'd':
++      subopts = optarg;
++      while (*subopts != '\0')
++        switch (getsubopt(&subopts, dh_bit_opts, &value)) {
++          case DH_MIN_BITS:
++            if (value == NULL)
++              abort ();
++            options.dh_minbits = atoi(value);
++            break;
++          case DH_N_BITS:
++            if (value == NULL)
++              abort ();
++            options.dh_nbits = atoi(value);
++            break;
++          case DH_MAX_BITS:
++            if (value == NULL)
++              abort ();
++            options.dh_maxbits = atoi(value);
++            break;
++          default:
++            fprintf(stderr, "Unknown -d suboption\n");
++            break;
++       }
++       break;
+ 		case 'k':
+ 			options.gss_deleg_creds = 0;
+ 			break;
+@@ -1325,12 +1367,14 @@
+ 	ssh_login(&sensitive_data, host, (struct sockaddr *)&hostaddr,
+ 	    options.port, pw, timeout_ms);
+ 
++  /*
+ 	if (packet_connection_is_on_socket()) {
+ 		verbose("Authenticated to %s ([%s]:%d).", host,
+ 		    get_remote_ipaddr(), get_remote_port());
+ 	} else {
+ 		verbose("Authenticated to %s (via proxy).", host);
+ 	}
++  */
+ 
+ 	/* We no longer need the private host keys.  Clear them now. */
+ 	if (sensitive_data.nkeys != 0) {
+diff -u -b openssh-6.9p1/sshconnect2.c openssh-6.9p1-new/sshconnect2.c
+--- openssh-6.9p1/sshconnect2.c	2015-06-30 22:35:31.000000000 -0400
++++ openssh-6.9p1-new/sshconnect2.c	2015-07-20 11:45:14.556032803 -0400
+@@ -222,6 +222,11 @@
+ 	kex->server_version_string=server_version_string;
+ 	kex->verify_host_key=&verify_host_key_callback;
+ 
++  /* Take key bit parameters from command line. */
++  kex->min = options.dh_minbits;
++  kex->max = options.dh_maxbits;
++  kex->nbits = options.dh_nbits;
++
+ 	dispatch_run(DISPATCH_BLOCK, &kex->done, active_state);
+ 
+ 	if (options.use_roaming && !kex->roaming) {
+diff -u -b openssh-6.9p1/sshconnect.c openssh-6.9p1-new/sshconnect.c
+--- openssh-6.9p1/sshconnect.c	2015-06-30 22:35:31.000000000 -0400
++++ openssh-6.9p1-new/sshconnect.c	2015-07-20 11:52:46.150272138 -0400
+@@ -1333,10 +1333,10 @@
+     struct sockaddr *hostaddr, u_short port, struct passwd *pw, int timeout_ms)
+ {
+ 	char *host;
+-	char *server_user, *local_user;
++	/*char *server_user, *local_user;*/
+ 
+-	local_user = xstrdup(pw->pw_name);
+-	server_user = options.user ? options.user : local_user;
++	/*local_user = xstrdup(pw->pw_name);*/
++	/*server_user = options.user ? options.user : local_user;*/
+ 
+ 	/* Convert the user-supplied hostname into all lowercase. */
+ 	host = xstrdup(orighost);
+@@ -1350,19 +1350,21 @@
+ 
+ 	/* key exchange */
+ 	/* authenticate user */
+-	debug("Authenticating to %s:%d as '%s'", host, port, server_user);
++	/*debug("Authenticating to %s:%d as '%s'", host, port, server_user);*/
+ 	if (compat20) {
+ 		ssh_kex2(host, hostaddr, port);
+-		ssh_userauth2(local_user, server_user, host, sensitive);
++		/*ssh_userauth2(local_user, server_user, host, sensitive);*/
+ 	} else {
+ #ifdef WITH_SSH1
+ 		ssh_kex(host, hostaddr);
+-		ssh_userauth1(local_user, server_user, host, sensitive);
++		/*ssh_userauth1(local_user, server_user, host, sensitive);*/
+ #else
+ 		fatal("ssh1 is not supported");
+ #endif
+ 	}
+-	free(local_user);
++	/*free(local_user);*/
++  /* Exit after key exchange. No authentication. */
++  exit(0);
+ }
+ 
+ void
