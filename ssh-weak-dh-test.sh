@@ -4,8 +4,8 @@ readonly SSH_PATCHED="./openssh-6.?p?/ssh"
 readonly SSH_OPTS="-2 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o NoHostAuthenticationForLocalhost=yes"
 readonly CONFIGS="configs/config-default configs/config-dh_gex_sha1 configs/config-dh_gex_sha256"
 readonly BIT_LENGTHS="512 768 1024 1280 1536 2048"
-readonly OUT_DIR="logjam"
-readonly LOGJAM_ANALYZE="./logjam-analyze.py"
+readonly OUT_DIR="ssh-weak-dh"
+readonly SSH_WEAK_DH_ANALYZE="./ssh-weak-dh-analyze.py"
 
 usage() {
   local progname=$1
@@ -15,9 +15,8 @@ usage() {
 
 	This program connects to the given target SSH server with a
   patched SSH client and logs information about the key exchange.
-	The log files can be manually analyzed or fed into to a script
-	to determine whether the server is vulnerable to the SSH logjam
-	attack.
+	The log files can be manually analyzed or fed into a script
+	to determine whether the server enables weak DH groups.
 	EOF
 }
 
@@ -76,7 +75,7 @@ main() {
   echo "Analysis of results:"
   echo ""
 
-  python -u $LOGJAM_ANALYZE ${out_prefix}
+  python -u $SSH_WEAK_DH_ANALYZE ${out_prefix}
 }
 
 main "$@"
