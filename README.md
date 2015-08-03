@@ -9,7 +9,7 @@ For further information about our tool, visit [http://blog.gdssecurity.com/](htt
 
 ## Requirements
 
-This tool was tested under Ubuntu 14.04.
+This tool was tested under Ubuntu 14.04 and Mac OS X Yosemite.
 Although we have not tested our tool with other Linux distributions, its dependencies do not restrict its use to Ubuntu.
 
 The setup script downloads, patches, and compiles a portable OpenSSH variant for Linux.
