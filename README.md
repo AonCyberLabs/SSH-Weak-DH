@@ -3,7 +3,7 @@
 This tool establishes SSH connections to a server, thereby enumerating through various client configurations, in order to determine whether the server allows a Diffie-Hellman (DH) key exchange based on a weak group.
 We hope that our tool will be useful to check SSH servers for weak DH key exchange configurations.
 
-For further information about our tool, visit [http://blog.gdssecurity.com/](http://blog.gdssecurity.com/).
+For further information about our tool, visit [http://blog.gdssecurity.com/labs/2015/8/3/ssh-weak-diffie-hellman-group-identification-tool.html](http://blog.gdssecurity.com/labs/2015/8/3/ssh-weak-diffie-hellman-group-identification-tool.html).
 
 # Installation
 
