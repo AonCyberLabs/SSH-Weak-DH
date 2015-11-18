@@ -4,6 +4,11 @@
 This program analyzes the output produced by the
 OpenSSH client which is patched for analyzing the
 key exchange.
+
+SSH-Weak-DH v1.0
+Ron Gutierrez <rgutierrez@gdssecurity.com>
+Blog: https://blog.gdssecurity.com/labs/2015/8/3/ssh-weak-diffie-hellman-group-identification-tool.html
+Copyright 2015 Gotham Digital Science
 """
 
 from __future__ import print_function
