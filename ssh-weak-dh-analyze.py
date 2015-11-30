@@ -6,6 +6,7 @@ OpenSSH client which is patched for analyzing the
 key exchange.
 
 SSH-Weak-DH v1.0
+Fabian Foerg <ffoerg@gdssecurity.com>
 Ron Gutierrez <rgutierrez@gdssecurity.com>
 Blog: https://blog.gdssecurity.com/labs/2015/8/3/ssh-weak-diffie-hellman-group-identification-tool.html
 Copyright 2015 Gotham Digital Science
@@ -24,6 +25,7 @@ DH_BITS_NATION = 1536
 KEX_ALGO = "KEX algorithm chosen: "
 DH_GROUP_BIT_CLIENT = "KEX client group sizes: "
 DH_GROUP_BIT_SERVER = "KEX server-chosen group size in bits: "
+DH_GROUP1 = "diffie-hellman-group1-sha1"
 
 """
 prints a security ranking for the given Diffie-Hellman group size
@@ -56,10 +58,18 @@ def analyze(f):
     dh_bits_client = (0, 0, 0)
     dh_bits_server = 0
 
-    while (lineno + 2) < len(lines):
+    while lineno < len(lines):
         line = lines[lineno]
         if line.startswith(KEX_ALGO):
             dh_algo = line[len(KEX_ALGO):].strip()
+            # Treat DH group1 (Oakley Group 2) individually, since it is
+            # negotiated via the diffie-hellman-group1-sha1 method and not the
+            # DH GEX methods (so the client does not propose group sizes, since
+            # the group is fixed).
+            if dh_algo == DH_GROUP1:
+                dh_sec_level(dh_algo, [1024, 1024, 1024], 1024)
+        if (lineno + 2) >= len(lines):
+            break
         line = lines[lineno + 1]
         if line.startswith(DH_GROUP_BIT_CLIENT):
             ints = [int(s) for s in re.split('\s+|\s*,\s*', line) if s.isdigit()]

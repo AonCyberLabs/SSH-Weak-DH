@@ -69,6 +69,8 @@ main() {
       run $config $target $port $out_prefix $bit_length
     done
   done
+  # Check for group1 manually
+  ${SSH_PATCHED} $SSH_OPTS -F configs/config-group1 -p $port $target 2>&1 | tee "${out_prefix}/config-group1"
 
   echo ""
   echo ""
