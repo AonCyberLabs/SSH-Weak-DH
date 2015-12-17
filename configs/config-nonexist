@@ -1,3 +1,4 @@
 Host *
-	Protocol 2
-  KexAlgorithms nonexistingkex
+        Protocol 2
+        KexAlgorithms nonexistingkex
+
