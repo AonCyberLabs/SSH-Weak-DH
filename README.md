@@ -15,12 +15,12 @@ Although we have not tested our tool with other Linux distributions, its depende
 The setup script downloads, patches, and compiles a portable OpenSSH variant for Linux.
 For this process to succeed, you need to have the dependencies for compiling OpenSSH installed.
 
-Other requirements include the patch tool, the bash shell, and Python 2.7 or later.
+Other requirements include wget, tar, shasum, the patch tool, the bash shell, and Python 2.7 or later.
 
 On a Debian-based system, use the following command to install dependencies:
 
 ~~~
-sudo apt-get install build-essential automake patch libssl-dev python bash
+sudo apt-get install coreutils build-essential automake patch libssl-dev python bash wget tar
 ~~~
 
 Installing the aforementioned packages, might already suffice to successfully build the patched OpenSSH client.
