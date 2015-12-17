@@ -1,6 +1,5 @@
 #!/bin/sh
 
-# sudo apt-get install build-essential automake libssl-dev
 wget -nc http://mirrors.nycbug.org/pub/OpenBSD/OpenSSH/portable/openssh-6.9p1.tar.gz
 #git clone -b V_6_9_P1 https://anongit.mindrot.org/openssh.git
 tar xzf openssh-6.?p?.tar.gz
