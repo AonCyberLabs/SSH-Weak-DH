@@ -117,6 +117,8 @@ def main():
 
     walk_dir(directory)
 
+    print("WARNING: This tool tests a limited number of configurations and therefore potentially fails to detect some weak configurations. Moreover, the server possibly blocks connections before the scan completes.")
+
 if  __name__ =='__main__':
     main()
 

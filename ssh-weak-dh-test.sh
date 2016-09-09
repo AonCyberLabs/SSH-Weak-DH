@@ -1,11 +1,11 @@
 #!/bin/bash
 
-readonly SSH_PATCHED="./openssh-6.?p?/ssh"
-readonly SSH_OPTS="-2 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o NoHostAuthenticationForLocalhost=yes"
-readonly CONFIGS="configs/config-default configs/config-dh_gex_sha1 configs/config-dh_gex_sha256"
-readonly BIT_LENGTHS="512 768 1024 1280 1536 2048"
-readonly OUT_DIR="ssh-weak-dh"
-readonly SSH_WEAK_DH_ANALYZE="./ssh-weak-dh-analyze.py"
+readonly SSH_PATCHED='./openssh-6.?p?/ssh'
+readonly SSH_OPTS='-2 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o NoHostAuthenticationForLocalhost=yes'
+readonly CONFIGS='configs/config-default configs/config-dh_gex_sha1 configs/config-dh_gex_sha256'
+readonly BIT_LENGTHS='512 768 1024 1280 1536 2048'
+readonly OUT_DIR='ssh-weak-dh'
+readonly SSH_WEAK_DH_ANALYZE='./ssh-weak-dh-analyze.py'
 
 usage() {
   local progname=$1
@@ -29,10 +29,10 @@ run() {
 
   # redirect stderr containing key exchange information to file
   if [[ "$#" -ne 5 ]]; then
-    ${SSH_PATCHED} $SSH_OPTS -F $config -p $port $target 2>&1 | tee "${out_prefix}/${out_file_name}"
+    $SSH_PATCHED $SSH_OPTS -F $config -p $port $target 2>&1 | tee "${out_prefix}/${out_file_name}"
   else
     local bit_length=$5
-    ${SSH_PATCHED} $SSH_OPTS -d minbits=${bit_length},nbits=${bit_length},maxbits=${bit_length} -F $config -p $port $target 2>&1 | tee "${out_prefix}/${out_file_name}_${bit_length}"
+    $SSH_PATCHED $SSH_OPTS -d minbits=${bit_length},nbits=${bit_length},maxbits=${bit_length} -F $config -p $port $target 2>&1 | tee "${out_prefix}/${out_file_name}_${bit_length}"
   fi
 }
 
@@ -59,7 +59,10 @@ main() {
   echo "Saving output files in ${out_prefix}"
   echo ""
 
-  for config in ${CONFIGS}
+  # Check for group1 manually
+  $SSH_PATCHED $SSH_OPTS -F configs/config-group1 -p $port $target 2>&1 | tee "${out_prefix}/config-group1"
+
+  for config in $CONFIGS
   do
     # Tests with default OpenSSH client parameters
     run $config $target $port $out_prefix
@@ -69,15 +72,13 @@ main() {
       run $config $target $port $out_prefix $bit_length
     done
   done
-  # Check for group1 manually
-  ${SSH_PATCHED} $SSH_OPTS -F configs/config-group1 -p $port $target 2>&1 | tee "${out_prefix}/config-group1"
 
   echo ""
   echo ""
   echo "Analysis of results:"
   echo ""
 
-  python -u $SSH_WEAK_DH_ANALYZE ${out_prefix}
+  python -u $SSH_WEAK_DH_ANALYZE $out_prefix
 }
 
 main "$@"

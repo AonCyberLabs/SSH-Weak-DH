@@ -55,6 +55,12 @@ Our analysis script is a standalone script and can be run on a results folder as
 
 The example above analyzes the results of the scan for the SSH server running on port 22 on localhost.
 
+WARNING: This tool tests a limited number of configurations and therefore
+potentially fails to detect some weak configurations. Moreover, the server
+possibly blocks connections before the scan completes.
+
+As for OpenSSH servers, [https://weakdh.org/sysadmin.html](https://weakdh.org/sysadmin.html) provides configuration suggestions.
+
 # Copyright
 
 Fabian Foerg, Gotham Digital Science, 2015
