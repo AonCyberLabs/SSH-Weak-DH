@@ -8,7 +8,7 @@ command -v patch >/dev/null 2>&1 || { echo >&2 "Please install patch"; exit 1; }
 command -v make >/dev/null 2>&1 || { echo >&2 "Please install make"; exit 1; }
 
 # Installation
-wget -nc http://mirrors.nycbug.org/pub/OpenBSD/OpenSSH/portable/openssh-6.9p1.tar.gz
+wget -nc http://ftp.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-6.9p1.tar.gz
 #git clone -b V_6_9_P1 https://anongit.mindrot.org/openssh.git
 
 CHECKSUM=$(shasum -a 256 openssh-6.?p?.tar.gz)
