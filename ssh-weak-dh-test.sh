@@ -1,6 +1,6 @@
 #!/bin/bash
 
-readonly SSH_PATCHED='./openssh-6.?p?/ssh'
+readonly SSH_PATCHED='./openssh-7.?p?/ssh'
 readonly SSH_OPTS='-2 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o NoHostAuthenticationForLocalhost=yes'
 readonly CONFIGS='configs/config-default configs/config-dh_gex_sha1 configs/config-dh_gex_sha256'
 readonly BIT_LENGTHS='512 768 1024 1280 1536 2048'
