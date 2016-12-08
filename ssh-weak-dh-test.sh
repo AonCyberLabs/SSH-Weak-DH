@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 readonly SSH_PATCHED='./openssh-7.?p?/ssh'
 readonly SSH_OPTS='-2 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o NoHostAuthenticationForLocalhost=yes'
