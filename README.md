@@ -52,7 +52,8 @@ SSH server running on port 22 on localhost:
 
 # Acknowledgments
 
-The patch bsd-compatible-realpath.patch is provided by [https://git.alpinelinux.org/cgit/aports/plain/main/openssh/bsd-compatible-realpath.patch](Alpine Linux).
+The patch bsd-compatible-realpath.patch is provided by
+[Alpine Linux](https://git.alpinelinux.org/cgit/aports/plain/main/openssh/bsd-compatible-realpath.patch).
 
 # Copyright
 
