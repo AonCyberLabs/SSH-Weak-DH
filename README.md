@@ -28,7 +28,7 @@ docker build -t ssh-weak-dh .
 
 Run the following commands:
 ```bash
-docker run --rm -v "$(pwd)/logs":/logs ssh-weak-dh hostname [port]
+docker run --rm -v "$(pwd)/logs/":/logs/ ssh-weak-dh hostname [port]
 ```
 where `hostname` is the host name or IP address of the SSH server to scan. The
 optional argument `port` allows you to specify the port on which the SSH server
@@ -49,6 +49,20 @@ SSH server running on port 22 on localhost:
 ```bash
 ./ssh-weak-dh-analyze.py logs/localhost-22
 ```
+
+If you don't have Python installed, you may run the analysis script inside the
+Docker container:
+```bash
+docker run --rm -v "$(pwd)/logs/":/logs/ -it --entrypoint bash ssh-weak-dh
+./ssh-weak-dh-analyze.py /logs/localhost-22
+```
+
+It is also possible to run the scan script inside the container shell as
+follows:
+```bash
+./ssh-weak-dh-test.sh hostname [port]
+```
+where `hostname` and `port` are the scanner arguments as explained before.
 
 # Acknowledgments
 

@@ -78,7 +78,7 @@ main() {
   echo "Analysis of results:"
   echo ""
 
-  python3 -u $SSH_WEAK_DH_ANALYZE $out_prefix
+  python -u $SSH_WEAK_DH_ANALYZE $out_prefix
 }
 
 main "$@"
