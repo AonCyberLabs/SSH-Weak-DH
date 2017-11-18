@@ -5,11 +5,11 @@ This program analyzes the output produced by the
 OpenSSH client which is patched for analyzing the
 key exchange.
 
-SSH-Weak-DH v1.0
+SSH-Weak-DH v1.1
 Fabian Foerg <ffoerg@gdssecurity.com>
 Ron Gutierrez <rgutierrez@gdssecurity.com>
 Blog: https://blog.gdssecurity.com/labs/2015/8/3/ssh-weak-diffie-hellman-group-identification-tool.html
-Copyright 2015 Gotham Digital Science
+Copyright 2015-2017 Gotham Digital Science
 """
 
 from __future__ import print_function
@@ -18,6 +18,7 @@ import sys
 from os import listdir
 from os.path import isfile, isdir, join
 import re
+import textwrap
 
 DH_BITS_WEAK = 768
 DH_BITS_ACADEMIC = 1024
@@ -32,9 +33,11 @@ prints a security ranking for the given Diffie-Hellman group size
 in bits
 """
 def dh_sec_level(dh_algo, dh_bits_client, dh_bits_server):
-    print("The client proposed the following group size parameters (in bits): min=", dh_bits_client[0], ", nbits=", dh_bits_client[1], ", max=", dh_bits_client[2], ".", sep='')
+    print("The client proposed the following group size parameters (in bits): ",
+          "min=", dh_bits_client[0], ", nbits=", dh_bits_client[1], ", max=",
+          dh_bits_client[2], ".", sep='')
     print("The client and server negotiated a group size of ",
-            dh_bits_server, " using ", dh_algo, ".", sep='')
+          dh_bits_server, " using ", dh_algo, ".", sep='')
     print("The security level is ", end="")
     if dh_bits_server < DH_BITS_WEAK:
         print("WEAK.")
@@ -51,8 +54,9 @@ analyze the given file, looking for Diffie-Hellman group sizes and
 algorithm
 """
 def analyze(f):
-    file = open(f, "r")
-    lines = file.readlines()
+    lines = []
+    with open(f, "r") as fb:
+        lines = [line.rstrip("\n") for line in fb]
     lineno = 0
     dh_algo = ""
     dh_bits_client = (0, 0, 0)
@@ -64,30 +68,31 @@ def analyze(f):
             dh_algo = line[len(KEX_ALGO):].strip()
             # Treat DH group1 (Oakley Group 2) individually, since it is
             # negotiated via the diffie-hellman-group1-sha1 method and not the
-            # DH GEX methods (so the client does not propose group sizes, since
+            # DH GEX methods (the client does not propose group sizes, since
             # the group is fixed).
             if dh_algo == DH_GROUP1:
                 dh_sec_level(dh_algo, [1024, 1024, 1024], 1024)
-        if (lineno + 2) >= len(lines):
-            break
-        line = lines[lineno + 1]
-        if line.startswith(DH_GROUP_BIT_CLIENT):
-            ints = [int(s) for s in re.split('\s+|\s*,\s*', line) if s.isdigit()]
-            if len(ints) == 3:
-                dh_bits_client = ints
-            else:
-                print("Error: Cannot parse client parameters!")
-                break
-        line = lines[lineno + 2]
-        if line.startswith(DH_GROUP_BIT_SERVER):
-            ints = [int(s) for s in line.split() if s.isdigit()]
-            if len(ints) == 1:
-                dh_bits_server = ints[0]
-                dh_sec_level(dh_algo, dh_bits_client, dh_bits_server)
-            else:
-                print("Error: Cannot parse server group size!")
-                break
+        elif (lineno + 2) <= len(lines):
+            parse_group_exchange(lines[lineno:lineno + 2], dh_algo)
         lineno += 1
+
+"""
+parses the two given lines for Diffie-Hellman group exchange parameters
+"""
+def parse_group_exchange(lines, dh_algo):
+    assert(len(lines) == 2)
+
+    fst = lines[0]
+    snd = lines[1]
+
+    if fst.startswith(DH_GROUP_BIT_CLIENT) and snd.startswith(DH_GROUP_BIT_SERVER):
+        dh_bits_client = [int(s) for s in re.split("\s+|\s*,\s*", fst) if s.isdigit()]
+        dh_bits_server = [int(s) for s in snd.split() if s.isdigit()]
+
+        if len(dh_bits_client) == 3 and len(dh_bits_server) == 1:
+            dh_sec_level(dh_algo, dh_bits_client, dh_bits_server[0])
+        else:
+            print("Error: Cannot parse client parameters or server group size!")
 
 """
 analyze all files in the given directory
@@ -117,8 +122,8 @@ def main():
 
     walk_dir(directory)
 
-    print("WARNING: This tool tests a limited number of configurations and therefore potentially fails to detect some weak configurations. Moreover, the server possibly blocks connections before the scan completes.")
+    print("\n".join(textwrap.wrap("WARNING: This tool tests a limited number of configurations and therefore potentially fails to detect some weak configurations. Moreover, the server possibly blocks connections before the scan completes.")))
 
-if  __name__ =='__main__':
+if  __name__ =="__main__":
     main()
 
