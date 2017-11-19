@@ -2,9 +2,9 @@
 
 This tool establishes SSH connections to a server, thereby enumerating through
 various client configurations, in order to determine whether the server allows
-a Diffie-Hellman (DH) key exchange based on a weak group, thus enabling Logjam
-attacks.  We hope that our tool will be useful to check SSH servers for weak DH
-key exchange configurations.
+a Diffie-Hellman (DH) key exchange based on a weak group.  We hope that our
+tool will be useful to check SSH servers for weak DH key exchange
+configurations.
 
 Note that this tool tests a limited number of configurations and therefore
 potentially fails to detect some weak configurations. Moreover, the server
@@ -15,7 +15,7 @@ For further information about our tool, visit
 
 Consult [https://weakdh.org/sysadmin.html](https://weakdh.org/sysadmin.html)
 for suggestions on how to configure SSH servers to protect them as well as
-their clients against Logjam attacks.
+their clients from attacks exploiting DH key exchanges using a weak group.
 
 # Installation
 
