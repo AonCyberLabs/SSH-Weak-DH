@@ -13,9 +13,9 @@ possibly blocks connections before the scan completes.
 For further information about our tool, visit
 [http://blog.gdssecurity.com/labs/2015/8/3/ssh-weak-diffie-hellman-group-identification-tool.html](http://blog.gdssecurity.com/labs/2015/8/3/ssh-weak-diffie-hellman-group-identification-tool.html).
 
-Consult [https://weakdh.org/sysadmin.html](https://weakdh.org/sysadmin.html)
-for suggestions on how to configure SSH servers to protect them as well as
-their clients from attacks exploiting DH key exchanges using a weak group.
+Consult the [Logjam info page](https://weakdh.org/sysadmin.html) for
+suggestions on how to configure SSH servers to protect them as well as their
+clients from attacks exploiting DH key exchanges using a weak group.
 
 # Installation
 
@@ -45,16 +45,16 @@ results stored in the aforementioned subfolder.  This analysis script is a
 standalone tool.
 
 For example, run the following command to analyze the results of a scan of the
-SSH server running on port 22 on localhost:
+SSH server running on port 22 on scanme.example.com:
 ```bash
-./ssh-weak-dh-analyze.py logs/localhost-22
+./ssh-weak-dh-analyze.py logs/scanme.example.com-22
 ```
 
 If you don't have Python installed, you may run the analysis script inside the
 Docker container:
 ```bash
 docker run --rm -v "$(pwd)/logs/":/logs/ -it --entrypoint bash ssh-weak-dh
-./ssh-weak-dh-analyze.py /logs/localhost-22
+./ssh-weak-dh-analyze.py /logs/scanme.example.com-22
 ```
 
 It is also possible to run the scan script inside the container shell as
