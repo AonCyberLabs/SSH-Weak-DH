@@ -26,5 +26,5 @@ RUN OPENSSH_VERSION='7.3p1' && \
     cd .. && \
     rm -rf "openssh-${OPENSSH_VERSION}/" *.patch && \
     apk del .build-deps
-RUN mkdir /logs/
+VOLUME /logs
 ENTRYPOINT ["bash", "ssh-weak-dh-test.sh"]
