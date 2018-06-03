@@ -1,6 +1,7 @@
 FROM alpine:3.7
-WORKDIR /app/
-COPY resources/ .
+WORKDIR /app
+COPY resources/openssh.patch .
+COPY resources/bsd-compatible-realpath.patch .
 RUN OPENSSH_VERSION='7.3p1' && \
     ARCHIVE_SHA_256='3ffb989a6dcaa69594c3b550d4855a5a2e1718ccdde7f5e36387b424220fbecc' && \
     apk add --no-cache bash libressl python3 && \
@@ -23,5 +24,9 @@ RUN OPENSSH_VERSION='7.3p1' && \
     cd .. && \
     rm -rf "openssh-${OPENSSH_VERSION}/" *.patch && \
     apk del .build-deps
+COPY resources/ssh-weak-dh-analyze.py .
+COPY resources/ssh-weak-dh-test.sh .
+COPY resources/configs/ configs/
 VOLUME /logs
+ENV PYTHONUNBUFFERED=1
 ENTRYPOINT ["bash", "ssh-weak-dh-test.sh"]
