@@ -1,18 +1,16 @@
-#!/usr/bin/python -u
+#!/usr/bin/env python3
 
 """
 This program analyzes the output produced by the
 OpenSSH client which is patched for analyzing the
 key exchange.
 
-SSH-Weak-DH v1.1
+SSH-Weak-DH v2.0
 Fabian Foerg <ffoerg@gdssecurity.com>
 Ron Gutierrez <rgutierrez@gdssecurity.com>
 Blog: https://blog.gdssecurity.com/labs/2015/8/3/ssh-weak-diffie-hellman-group-identification-tool.html
-Copyright 2015-2017 Gotham Digital Science
+Copyright 2015-2018 Gotham Digital Science
 """
-
-from __future__ import print_function
 
 import sys
 from os import listdir
@@ -33,21 +31,21 @@ prints a security ranking for the given Diffie-Hellman group size
 in bits
 """
 def dh_sec_level(dh_algo, dh_bits_client, dh_bits_server):
-    print("The client proposed the following group size parameters (in bits): ",
-          "min=", dh_bits_client[0], ", nbits=", dh_bits_client[1], ", max=",
-          dh_bits_client[2], ".", sep='')
-    print("The client and server negotiated a group size of ",
-          dh_bits_server, " using ", dh_algo, ".", sep='')
-    print("The security level is ", end="")
+    sec_level_str, sec_level_symbol = "", ""
     if dh_bits_server < DH_BITS_WEAK:
-        print("WEAK.")
+        sec_level_str, sec_level_symbol = "WEAK", "!"
     elif dh_bits_server < DH_BITS_ACADEMIC:
-        print("WEAK-INTERMEDIATE (might be feasible to break for academic teams).")
+        sec_level_str, sec_level_symbol = "WEAK-INTERMEDIATE (might be feasible to break for academic teams)", "-"
     elif dh_bits_server < DH_BITS_NATION:
-        print("INTERMEDIATE (might be feasible to break for nation-states).")
+        sec_level_str, sec_level_symbol = "INTERMEDIATE (might be feasible to break for nation-states)", "*"
     else:
-        print("STRONG.")
-    print()
+        sec_level_str, sec_level_symbol = "STRONG", "+"
+
+    info = "[{}] {}. Algorithm: {}. Negotiated group size in bits: {}. " \
+    "Group size proposed by client in bits: min={}, nbits={}, max={}." \
+    .format(sec_level_symbol, sec_level_str, dh_algo, dh_bits_server,
+            dh_bits_client[0], dh_bits_client[1], dh_bits_client[2])
+    print(info)
 
 """
 analyze the given file, looking for Diffie-Hellman group sizes and
@@ -122,6 +120,7 @@ def main():
 
     walk_dir(directory)
 
+    print("")
     print("\n".join(textwrap.wrap("WARNING: This tool tests a limited number of configurations and therefore potentially fails to detect some weak configurations. Moreover, the server possibly blocks connections before the scan completes.")))
 
 if  __name__ =="__main__":
