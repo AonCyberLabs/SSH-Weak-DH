@@ -1,4 +1,4 @@
-FROM alpine:3.9
+FROM alpine:3.12
 WORKDIR /app
 COPY resources/openssh.patch .
 COPY resources/bsd-compatible-realpath.patch .
