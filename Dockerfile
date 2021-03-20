@@ -19,7 +19,7 @@ RUN OPENSSH_VERSION='7.3p1' && \
     make ssh && \
     mv ssh /usr/local/bin/
 
-FROM alpine:3.12
+FROM alpine:3.13
 WORKDIR /app
 RUN apk add --no-cache bash libressl python3 && \
     ln -s /usr/bin/python3 /usr/bin/python
