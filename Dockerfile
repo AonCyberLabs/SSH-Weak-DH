@@ -9,7 +9,7 @@ RUN OPENSSH_VERSION='7.3p1' && \
     curl -s -O "https://ftp.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-${OPENSSH_VERSION}.tar.gz" && \
     CHECKSUM=$(sha256sum "openssh-${OPENSSH_VERSION}.tar.gz" | awk '{print $1;}') && \
     echo "Checksum is $CHECKSUM" && \
-    [ "$CHECKSUM" == "$ARCHIVE_SHA_256" ] && \
+    [ "$CHECKSUM" = "$ARCHIVE_SHA_256" ] && \
     echo "Checksum is valid" && \
     tar xzf "openssh-${OPENSSH_VERSION}.tar.gz" && \
     cd "openssh-${OPENSSH_VERSION}" && \
