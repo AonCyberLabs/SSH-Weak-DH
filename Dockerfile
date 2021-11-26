@@ -1,4 +1,4 @@
-FROM alpine:3.13 AS build
+FROM alpine:3.15 AS build
 WORKDIR /usr/local/src/ssh
 COPY resources/openssh.patch .
 COPY resources/bsd-compatible-realpath.patch .
@@ -19,7 +19,7 @@ RUN OPENSSH_VERSION='7.3p1' && \
     make ssh && \
     mv ssh /usr/local/bin/
 
-FROM alpine:3.13
+FROM alpine:3.15
 WORKDIR /app
 RUN apk add --no-cache bash libressl python3 && \
     ln -s /usr/bin/python3 /usr/bin/python
