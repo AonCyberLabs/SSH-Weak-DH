@@ -5,7 +5,7 @@ This program analyzes the output produced by the
 OpenSSH client which is patched for analyzing the
 key exchange.
 
-SSH-Weak-DH v2.0
+SSH-Weak-DH v2.1
 Fabian Foerg <ffoerg@gdssecurity.com>
 Ron Gutierrez <rgutierrez@gdssecurity.com>
 Blog: https://blog.gdssecurity.com/labs/2015/8/3/ssh-weak-diffie-hellman-group-identification-tool.html
@@ -26,13 +26,12 @@ DH_GROUP_BIT_CLIENT = "KEX client group sizes: "
 DH_GROUP_BIT_SERVER = "KEX server-chosen group size in bits: "
 DH_GROUP1 = "diffie-hellman-group1-sha1"
 
-"""
-prints a security ranking for the given Diffie-Hellman group size
-in bits
-"""
-
 
 def dh_sec_level(dh_algo, dh_bits_client, dh_bits_server):
+    """
+    prints a security ranking for the given Diffie-Hellman group size
+    in bits
+    """
     sec_level_str, sec_level_symbol = "", ""
     if dh_bits_server < DH_BITS_WEAK:
         sec_level_str, sec_level_symbol = "WEAK", "!"
@@ -64,13 +63,11 @@ def dh_sec_level(dh_algo, dh_bits_client, dh_bits_server):
     print(info)
 
 
-"""
-analyze the given file, looking for Diffie-Hellman group sizes and
-algorithm
-"""
-
-
 def analyze(f):
+    """
+    analyze the given file, looking for Diffie-Hellman group sizes and
+    algorithm
+    """
     lines = []
     with open(f, "r") as fb:
         lines = [line.rstrip("\n") for line in fb]
@@ -94,12 +91,10 @@ def analyze(f):
         lineno += 1
 
 
-"""
-parses the two given lines for Diffie-Hellman group exchange parameters
-"""
-
-
 def parse_group_exchange(lines, dh_algo):
+    """
+    parses the two given lines for Diffie-Hellman group exchange parameters
+    """
     assert len(lines) == 2
 
     fst = lines[0]
@@ -115,12 +110,10 @@ def parse_group_exchange(lines, dh_algo):
             print("Error: Cannot parse client parameters or server group size!")
 
 
-"""
-analyze all files in the given directory
-"""
-
-
 def walk_dir(d):
+    """
+    analyze all files in the given directory
+    """
     subdirs = sorted(listdir(d))
     for f in subdirs:
         path = join(d, f)
@@ -128,12 +121,10 @@ def walk_dir(d):
             analyze(path)
 
 
-"""
-parse command-line parameters and start analysis
-"""
-
-
 def main():
+    """
+    parse command-line parameters and start analysis
+    """
     args = sys.argv
 
     if len(args) != 2:
