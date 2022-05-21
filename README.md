@@ -71,5 +71,5 @@ The patch bsd-compatible-realpath.patch is provided by
 
 # Copyright
 
-Fabian Foerg, Gotham Digital Science, 2015-2021
+Fabian Foerg, Gotham Digital Science, 2015-2022
 
