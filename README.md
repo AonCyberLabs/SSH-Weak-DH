@@ -64,11 +64,6 @@ follows:
 ```
 where `hostname` and `port` are the scanner arguments as explained before.
 
-# Acknowledgments
-
-The patch bsd-compatible-realpath.patch is provided by
-[Alpine Linux](https://git.alpinelinux.org/cgit/aports/plain/main/openssh/bsd-compatible-realpath.patch).
-
 # Copyright
 
 Fabian Foerg, Gotham Digital Science, 2015-2023
