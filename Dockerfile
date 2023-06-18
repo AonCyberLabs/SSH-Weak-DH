@@ -1,7 +1,6 @@
 FROM alpine:3.18 AS build
 WORKDIR /usr/local/src/ssh
 COPY resources/openssh-9.3p1.patch .
-COPY resources/bsd-compatible-realpath.patch .
 RUN OPENSSH_VERSION='9.3p1' && \
     ARCHIVE_SHA_256='e9baba7701a76a51f3d85a62c383a3c9dcd97fa900b859bc7db114c1868af8a8' && \
     apk add --virtual .build-deps \
