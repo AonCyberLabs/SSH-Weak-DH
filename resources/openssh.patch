@@ -2,13 +2,13 @@ Common subdirectories: openssh-9.3p1.orig/.github and openssh-9.3p1/.github
 Common subdirectories: openssh-9.3p1.orig/contrib and openssh-9.3p1/contrib
 diff -u openssh-9.3p1.orig/kex.c openssh-9.3p1/kex.c
 --- openssh-9.3p1.orig/kex.c	2023-06-18 11:30:13.000000000 -0400
-+++ openssh-9.3p1/kex.c	2023-06-18 11:33:53.000000000 -0400
++++ openssh-9.3p1/kex.c	2023-06-19 14:44:37.000000000 -0400
 @@ -902,6 +902,8 @@
  {
  	const struct kexalg *kexalg;
  
-+  fprintf(stderr, "KEX proposal client: %s\nKEX proposal server: %s\n",
-+      client, server);
++	fprintf(stderr, "KEX proposal client: %s\nKEX proposal server: %s\n",
++		client, server);
  	k->name = match_list(client, server, NULL);
  
  	debug("kex: algorithm: %s", k->name ? k->name : "(no match)");
@@ -16,13 +16,13 @@ diff -u openssh-9.3p1.orig/kex.c openssh-9.3p1/kex.c
  	k->kex_type = kexalg->type;
  	k->hash_alg = kexalg->hash_alg;
  	k->ec_nid = kexalg->ec_nid;
-+  fprintf(stderr, "KEX algorithm chosen: %s\n", k->name);
++	fprintf(stderr, "KEX algorithm chosen: %s\n", k->name);
  	return 0;
  }
  
 diff -u openssh-9.3p1.orig/kexgexc.c openssh-9.3p1/kexgexc.c
 --- openssh-9.3p1.orig/kexgexc.c	2023-06-18 11:30:13.000000000 -0400
-+++ openssh-9.3p1/kexgexc.c	2023-06-18 11:38:54.000000000 -0400
++++ openssh-9.3p1/kexgexc.c	2023-06-19 14:43:39.000000000 -0400
 @@ -65,9 +65,12 @@
  
  	nbits = dh_estimate(kex->dh_need * 8);
@@ -30,12 +30,12 @@ diff -u openssh-9.3p1.orig/kexgexc.c openssh-9.3p1/kexgexc.c
 -	kex->min = DH_GRP_MIN;
 -	kex->max = DH_GRP_MAX;
 -	kex->nbits = nbits;
-+  /*
-+   * Key bit parameters are already taken from command-line.
-+   * Take the suggested nbits only if no reasonable nbits are specified.
-+   */
-+  if (kex->nbits < kex->min)
-+	  kex->nbits = nbits;
++	/*
++	 * Key bit parameters are already taken from command-line.
++	 * Take the suggested nbits only if no reasonable nbits are specified.
++	 */
++	if (kex->nbits < kex->min)
++		kex->nbits = nbits;
  	if (ssh->compat & SSH_BUG_DHGEX_LARGE)
  		kex->nbits = MINIMUM(kex->nbits, 4096);
  	/* New GEX request */
@@ -47,8 +47,8 @@ diff -u openssh-9.3p1.orig/kexgexc.c openssh-9.3p1/kexgexc.c
 -	fprintf(stderr, "\nmin = %d, nbits = %d, max = %d\n",
 -	    kex->min, kex->nbits, kex->max);
 -#endif
-+  fprintf(stderr, "KEX client group sizes: min = %d, nbits = %d, max = %d\n",
-+      kex->min, kex->nbits, kex->max);
++	fprintf(stderr, "KEX client group sizes: min = %d, nbits = %d, max = %d\n",
++		kex->min, kex->nbits, kex->max);
  	debug("expecting SSH2_MSG_KEX_DH_GEX_GROUP");
  	ssh_dispatch_set(ssh, SSH2_MSG_KEX_DH_GEX_GROUP,
  	    &input_kex_dh_gex_group);
@@ -56,7 +56,7 @@ diff -u openssh-9.3p1.orig/kexgexc.c openssh-9.3p1/kexgexc.c
  	}
  	p = g = NULL; /* belong to kex->dh now */
  
-+  fprintf(stderr, "KEX server-chosen group size in bits: %d\n", bits);
++	fprintf(stderr, "KEX server-chosen group size in bits: %d\n", bits);
 +
  	/* generate and send 'e', client DH public key */
  	if ((r = dh_gen_key(kex->dh, kex->we_need * 8)) != 0)
@@ -65,7 +65,7 @@ Common subdirectories: openssh-9.3p1.orig/m4 and openssh-9.3p1/m4
 Common subdirectories: openssh-9.3p1.orig/openbsd-compat and openssh-9.3p1/openbsd-compat
 diff -u openssh-9.3p1.orig/readconf.c openssh-9.3p1/readconf.c
 --- openssh-9.3p1.orig/readconf.c	2023-06-18 11:30:13.000000000 -0400
-+++ openssh-9.3p1/readconf.c	2023-06-18 11:41:51.000000000 -0400
++++ openssh-9.3p1/readconf.c	2023-06-19 14:42:55.000000000 -0400
 @@ -66,6 +66,7 @@
  #include "uidswap.h"
  #include "myproposal.h"
@@ -78,65 +78,63 @@ diff -u openssh-9.3p1.orig/readconf.c openssh-9.3p1/readconf.c
  	options->known_hosts_command = NULL;
  	options->required_rsa_size = -1;
  	options->enable_escape_commandline = -1;
-+  /* Default values taken from dh.h */
-+  options->dh_minbits = DH_GRP_MIN;
-+  options->dh_nbits = 0;
-+  options->dh_maxbits = DH_GRP_MAX;
++	/* Default values taken from dh.h */
++	options->dh_minbits = DH_GRP_MIN;
++	options->dh_nbits = 0;
++	options->dh_maxbits = DH_GRP_MAX;
  }
  
  /*
 diff -u openssh-9.3p1.orig/readconf.h openssh-9.3p1/readconf.h
 --- openssh-9.3p1.orig/readconf.h	2023-06-18 11:30:13.000000000 -0400
-+++ openssh-9.3p1/readconf.h	2023-06-18 12:06:43.000000000 -0400
++++ openssh-9.3p1/readconf.h	2023-06-19 14:42:37.000000000 -0400
 @@ -181,6 +181,11 @@
  	int	enable_escape_commandline;	/* ~C commandline */
  
  	char	*ignored_unknown; /* Pattern list of unknown tokens to ignore */
 +
-+  /* Diffie-Hellman key exchange bits */
-+  int dh_minbits;
-+  int dh_nbits;
-+  int dh_maxbits;
++	/* Diffie-Hellman key exchange bits */
++	int dh_minbits;
++	int dh_nbits;
++	int dh_maxbits;
  }       Options;
  
  #define SSH_PUBKEY_AUTH_NO	0x00
 Common subdirectories: openssh-9.3p1.orig/regress and openssh-9.3p1/regress
 diff -u openssh-9.3p1.orig/ssh.c openssh-9.3p1/ssh.c
 --- openssh-9.3p1.orig/ssh.c	2023-06-18 11:30:13.000000000 -0400
-+++ openssh-9.3p1/ssh.c	2023-06-18 11:50:24.000000000 -0400
-@@ -173,6 +173,23 @@
++++ openssh-9.3p1/ssh.c	2023-06-19 14:42:14.000000000 -0400
+@@ -173,6 +173,21 @@
  extern int muxserver_sock;
  extern u_int muxclient_command;
  
-+enum
-+{
-+  DH_MIN_BITS = 0,
-+  DH_N_BITS,
-+  DH_MAX_BITS,
-+  THE_END
++enum {
++	DH_MIN_BITS = 0,
++	DH_N_BITS,
++	DH_MAX_BITS,
++	THE_END
 +};
 +
 +/* Diffie-Hellman key exchange parameters */
-+static char *const dh_bit_opts[] =
-+{
-+  [DH_MIN_BITS] = "minbits",
-+  [DH_N_BITS] = "nbits",
-+  [DH_MAX_BITS] = "maxbits",
-+  [THE_END] = NULL
++static char *const dh_bit_opts[] = {
++	[DH_MIN_BITS] = "minbits",
++	[DH_N_BITS] = "nbits",
++	[DH_MAX_BITS] = "maxbits",
++	[THE_END] = NULL
 +};
 +
  /* Prints a help message to the user.  This function never returns. */
  
  static void
-@@ -643,6 +660,7 @@
+@@ -643,6 +658,7 @@
  	size_t n, len;
  	u_int j;
  	struct ssh_conn_info *cinfo = NULL;
-+  char *subopts, *value;
++	char *subopts, *value;
  
  	/* Ensure that fds 0, 1 and 2 are open or directed to /dev/null */
  	sanitise_stdfd();
-@@ -707,7 +725,7 @@
+@@ -707,7 +723,7 @@
  	argv0 = av[0];
  
   again:
@@ -145,84 +143,80 @@ diff -u openssh-9.3p1.orig/ssh.c openssh-9.3p1/ssh.c
  	    "AB:CD:E:F:GI:J:KL:MNO:PQ:R:S:TVw:W:XYy")) != -1) { /* HUZdhjruz */
  		switch (opt) {
  		case '1':
-@@ -1054,6 +1072,30 @@
+@@ -1054,6 +1070,31 @@
  		case 'F':
  			config = optarg;
  			break;
 + 		case 'd':
 + 			subopts = optarg;
-+ 			while (*subopts != '\0')
++ 			while (*subopts != '\0') {
 + 			  switch (getsubopt(&subopts, dh_bit_opts, &value)) {
 + 			    case DH_MIN_BITS:
 + 			      if (value == NULL)
-+ 				abort ();
++ 				abort();
 + 			      options.dh_minbits = atoi(value);
 + 			      break;
 + 			    case DH_N_BITS:
 + 			      if (value == NULL)
-+ 				abort ();
++ 				abort();
 + 			      options.dh_nbits = atoi(value);
 + 			      break;
 + 			    case DH_MAX_BITS:
 + 			      if (value == NULL)
-+ 				abort ();
++ 				abort();
 + 			      options.dh_maxbits = atoi(value);
 + 			      break;
 + 			    default:
 + 			      fprintf(stderr, "Unknown -d suboption\n");
 + 			      break;
 + 			  }
++			}
 + 			break;
  		default:
  			usage();
  		}
 diff -u openssh-9.3p1.orig/sshconnect.c openssh-9.3p1/sshconnect.c
 --- openssh-9.3p1.orig/sshconnect.c	2023-06-18 11:30:13.000000000 -0400
-+++ openssh-9.3p1/sshconnect.c	2023-06-18 11:57:46.000000000 -0400
-@@ -1555,11 +1555,11 @@
++++ openssh-9.3p1/sshconnect.c	2023-06-19 14:37:13.000000000 -0400
+@@ -1555,12 +1555,8 @@
      const struct ssh_conn_info *cinfo)
  {
  	char *host;
 -	char *server_user, *local_user;
-+	/*char *server_user, *local_user;*/
  	int r;
  
 -	local_user = xstrdup(pw->pw_name);
 -	server_user = options.user ? options.user : local_user;
-+	/* local_user = xstrdup(pw->pw_name); */
-+	/* server_user = options.user ? options.user : local_user; */
- 
+-
  	/* Convert the user-supplied hostname into all lowercase. */
  	host = xstrdup(orighost);
-@@ -1574,11 +1574,14 @@
+ 	lowercase(host);
+@@ -1574,11 +1570,11 @@
  
  	/* key exchange */
  	/* authenticate user */
 -	debug("Authenticating to %s:%d as '%s'", host, port, server_user);
-+	/* debug("Authenticating to %s:%d as '%s'", host, port, server_user); */
  	ssh_kex2(ssh, host, hostaddr, port, cinfo);
 -	ssh_userauth2(ssh, local_user, server_user, host, sensitive);
 -	free(local_user);
-+	/* ssh_userauth2(ssh, local_user, server_user, host, sensitive); */
-+	/* free(local_user); */
  	free(host);
 +
-+  /* Exit after key exchange. No authentication. */
-+  exit(0);
++	/* Exit after key exchange. No authentication. */
++	exit(0);
  }
  
  /* print all known host keys for a given host, but skip keys of given type */
 diff -u openssh-9.3p1.orig/sshconnect2.c openssh-9.3p1/sshconnect2.c
 --- openssh-9.3p1.orig/sshconnect2.c	2023-06-18 11:30:13.000000000 -0400
-+++ openssh-9.3p1/sshconnect2.c	2023-06-18 12:09:57.000000000 -0400
++++ openssh-9.3p1/sshconnect2.c	2023-06-19 14:36:20.000000000 -0400
 @@ -280,6 +280,11 @@
  	ssh->kex->kex[KEX_KEM_SNTRUP761X25519_SHA512] = kex_gen_client;
  	ssh->kex->verify_host_key=&verify_host_key_callback;
  
-+  /* Take key bit parameters from command line. */
-+  ssh->kex->min = options.dh_minbits;
-+  ssh->kex->max = options.dh_maxbits;
-+  ssh->kex->nbits = options.dh_nbits;
++	/* Take key bit parameters from command line. */
++	ssh->kex->min = options.dh_minbits;
++	ssh->kex->max = options.dh_maxbits;
++	ssh->kex->nbits = options.dh_nbits;
 +
  	ssh_dispatch_run_fatal(ssh, DISPATCH_BLOCK, &ssh->kex->done);
  
@@ -231,7 +225,7 @@ diff -u openssh-9.3p1.orig/sshconnect2.c openssh-9.3p1/sshconnect2.c
  
  	if (!authctxt.success)
  		fatal("Authentication failed.");
-+  /*
++	/*
  	if (ssh_packet_connection_is_on_socket(ssh)) {
  		verbose("Authenticated to %s ([%s]:%d) using \"%s\".", host,
  		    ssh_remote_ipaddr(ssh), ssh_remote_port(ssh),
@@ -239,7 +233,7 @@ diff -u openssh-9.3p1.orig/sshconnect2.c openssh-9.3p1/sshconnect2.c
  		verbose("Authenticated to %s (via proxy) using \"%s\".", host,
  		    authctxt.method->name);
  	}
-+  */
++	*/
  }
  
  static int
