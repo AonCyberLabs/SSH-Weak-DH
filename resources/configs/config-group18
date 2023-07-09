@@ -1,0 +1,4 @@
+Host *
+        Protocol 2
+        KexAlgorithms diffie-hellman-group18-sha512
+

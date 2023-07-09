@@ -1,4 +1,5 @@
 Common subdirectories: openssh-9.3p1.orig/.github and openssh-9.3p1/.github
+Only in openssh-9.3p1/: .vscode
 Common subdirectories: openssh-9.3p1.orig/contrib and openssh-9.3p1/contrib
 diff -u openssh-9.3p1.orig/kex.c openssh-9.3p1/kex.c
 --- openssh-9.3p1.orig/kex.c	2023-06-18 11:30:13.000000000 -0400
@@ -20,9 +21,35 @@ diff -u openssh-9.3p1.orig/kex.c openssh-9.3p1/kex.c
  	return 0;
  }
  
+diff -u openssh-9.3p1.orig/kexgen.c openssh-9.3p1/kexgen.c
+--- openssh-9.3p1.orig/kexgen.c	2023-06-18 11:30:13.000000000 -0400
++++ openssh-9.3p1/kexgen.c	2023-07-09 19:52:07.000000000 -0400
+@@ -108,7 +108,22 @@
+ 	case KEX_DH_GRP14_SHA256:
+ 	case KEX_DH_GRP16_SHA512:
+ 	case KEX_DH_GRP18_SHA512:
++	{
++		const BIGNUM *dh_p, *dh_g;
++		char *p_hex, *g_hex;
++
+ 		r = kex_dh_keypair(kex);
++
++		DH_get0_pqg(kex->dh, &dh_p, NULL, &dh_g);
++		p_hex = BN_bn2hex(dh_p);
++		g_hex = BN_bn2hex(dh_g);
++
++		fprintf(stderr, "KEX group prime in hex: %s\n", p_hex);
++		fprintf(stderr, "KEX group generator in hex: %s\n", g_hex);
++
++		OPENSSL_free(p_hex);
++		OPENSSL_free(g_hex);
++	}
+ 		break;
+ 	case KEX_ECDH_SHA2:
+ 		r = kex_ecdh_keypair(kex);
 diff -u openssh-9.3p1.orig/kexgexc.c openssh-9.3p1/kexgexc.c
 --- openssh-9.3p1.orig/kexgexc.c	2023-06-18 11:30:13.000000000 -0400
-+++ openssh-9.3p1/kexgexc.c	2023-06-19 14:43:39.000000000 -0400
++++ openssh-9.3p1/kexgexc.c	2023-07-09 17:55:45.000000000 -0400
 @@ -65,9 +65,12 @@
  
  	nbits = dh_estimate(kex->dh_need * 8);
@@ -32,7 +59,7 @@ diff -u openssh-9.3p1.orig/kexgexc.c openssh-9.3p1/kexgexc.c
 -	kex->nbits = nbits;
 +	/*
 +	 * Key bit parameters are already taken from command-line.
-+	 * Take the suggested nbits only if no reasonable nbits are specified.
++	 * Take the estimated nbits only if the command-line provided value is too small.
 +	 */
 +	if (kex->nbits < kex->min)
 +		kex->nbits = nbits;
@@ -52,11 +79,28 @@ diff -u openssh-9.3p1.orig/kexgexc.c openssh-9.3p1/kexgexc.c
  	debug("expecting SSH2_MSG_KEX_DH_GEX_GROUP");
  	ssh_dispatch_set(ssh, SSH2_MSG_KEX_DH_GEX_GROUP,
  	    &input_kex_dh_gex_group);
-@@ -117,6 +118,8 @@
+@@ -96,6 +97,7 @@
+ {
+ 	struct kex *kex = ssh->kex;
+ 	BIGNUM *p = NULL, *g = NULL;
++	char *p_hex, *g_hex;
+ 	const BIGNUM *pub_key;
+ 	int r, bits;
+ 
+@@ -115,8 +117,17 @@
+ 		r = SSH_ERR_ALLOC_FAIL;
+ 		goto out;
  	}
++	p_hex = BN_bn2hex(p);
++	g_hex = BN_bn2hex(g);
  	p = g = NULL; /* belong to kex->dh now */
  
 +	fprintf(stderr, "KEX server-chosen group size in bits: %d\n", bits);
++	fprintf(stderr, "KEX server-chosen group prime in hex: %s\n", p_hex);
++	fprintf(stderr, "KEX server-chosen group generator in hex: %s\n", g_hex);
++
++	OPENSSL_free(p_hex);
++	OPENSSL_free(g_hex);
 +
  	/* generate and send 'e', client DH public key */
  	if ((r = dh_gen_key(kex->dh, kex->we_need * 8)) != 0)
@@ -177,7 +221,7 @@ diff -u openssh-9.3p1.orig/ssh.c openssh-9.3p1/ssh.c
  		}
 diff -u openssh-9.3p1.orig/sshconnect.c openssh-9.3p1/sshconnect.c
 --- openssh-9.3p1.orig/sshconnect.c	2023-06-18 11:30:13.000000000 -0400
-+++ openssh-9.3p1/sshconnect.c	2023-06-19 14:37:13.000000000 -0400
++++ openssh-9.3p1/sshconnect.c	2023-07-09 17:38:47.000000000 -0400
 @@ -1555,12 +1555,8 @@
      const struct ssh_conn_info *cinfo)
  {

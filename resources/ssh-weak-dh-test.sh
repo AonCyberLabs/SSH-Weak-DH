@@ -78,7 +78,7 @@ main() {
   echo "Analysis of results:"
   echo ""
 
-  python -u $SSH_WEAK_DH_ANALYZE $out_prefix
+  pipenv run --quiet python -u $SSH_WEAK_DH_ANALYZE $out_prefix
 }
 
 main "$@"
