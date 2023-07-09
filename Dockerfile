@@ -18,12 +18,17 @@ RUN OPENSSH_VERSION='9.3p1' && \
     mv ssh /usr/local/bin/
 
 FROM alpine:3.18
+ENV PYTHONUNBUFFERED=1
+ENV LANG=C.UTF-8
 WORKDIR /app
-RUN apk add --no-cache bash libressl python3
+RUN apk add --no-cache bash libressl python3 py3-pip
+RUN pip install pipenv
 COPY --from=build /usr/local/bin/ssh .
+COPY resources/Pipfile .
+COPY resources/Pipfile.lock .
 COPY resources/ssh-weak-dh-analyze.py .
 COPY resources/ssh-weak-dh-test.sh .
 COPY resources/configs/ configs/
+RUN pipenv install
 VOLUME /logs
-ENV PYTHONUNBUFFERED=1
 ENTRYPOINT ["bash", "ssh-weak-dh-test.sh"]

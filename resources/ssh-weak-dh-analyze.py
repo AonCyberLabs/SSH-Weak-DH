@@ -5,7 +5,7 @@ This program analyzes the output produced by the
 OpenSSH client which is patched for analyzing the
 key exchange.
 
-SSH-Weak-DH v2.1
+SSH-Weak-DH v3.0
 Fabian Foerg <ffoerg@gdssecurity.com>
 Ron Gutierrez <rgutierrez@gdssecurity.com>
 Blog: https://blog.gdssecurity.com/labs/2015/8/3/ssh-weak-diffie-hellman-group-identification-tool.html
@@ -17,6 +17,7 @@ from os import listdir
 from os.path import isfile, isdir, join
 import re
 import textwrap
+from Crypto.Util.number import bytes_to_long, isPrime
 
 DH_BITS_WEAK = 768
 DH_BITS_ACADEMIC = 1024
@@ -25,6 +26,8 @@ KEX_ALGO = "KEX algorithm chosen: "
 DH_GROUP_BIT_CLIENT = "KEX client group sizes: "
 DH_GROUP_BIT_SERVER = "KEX server-chosen group size in bits: "
 DH_GROUP1 = "diffie-hellman-group1-sha1"
+PRIME_IDENTIFIER = " prime in hex: "
+GENERATOR_IDENTIFIER = " generator in hex: "
 
 
 def dh_sec_level(dh_algo, dh_bits_client, dh_bits_server):
@@ -78,7 +81,11 @@ def analyze(f):
 
     while lineno < len(lines):
         line = lines[lineno]
-        if line.startswith(KEX_ALGO):
+        if PRIME_IDENTIFIER in line:
+            check_prime(line.split(PRIME_IDENTIFIER)[1])
+        elif GENERATOR_IDENTIFIER in line:
+            pass
+        elif line.startswith(KEX_ALGO):
             dh_algo = line[len(KEX_ALGO) :].strip()
             # Treat DH group1 (Oakley Group 2) individually, since it is
             # negotiated via the diffie-hellman-group1-sha1 method and not the
@@ -89,6 +96,15 @@ def analyze(f):
         elif (lineno + 2) <= len(lines):
             parse_group_exchange(lines[lineno : lineno + 2], dh_algo)
         lineno += 1
+
+
+def check_prime(p_hex):
+    p = bytes_to_long(bytes.fromhex(p_hex))
+
+    # Check if p is a safe prime
+    q = (p - 1) // 2
+    if not isPrime(q) or not isPrime(p):
+        print("[!] BROKEN. {} is not a safe prime.".format(p_hex))
 
 
 def parse_group_exchange(lines, dh_algo):
