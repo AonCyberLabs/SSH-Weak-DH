@@ -23,7 +23,7 @@ diff -u openssh-9.3p1.orig/kex.c openssh-9.3p1/kex.c
  
 diff -u openssh-9.3p1.orig/kexgen.c openssh-9.3p1/kexgen.c
 --- openssh-9.3p1.orig/kexgen.c	2023-06-18 11:30:13.000000000 -0400
-+++ openssh-9.3p1/kexgen.c	2023-07-09 18:19:47.000000000 -0400
++++ openssh-9.3p1/kexgen.c	2023-07-09 19:52:07.000000000 -0400
 @@ -108,7 +108,22 @@
  	case KEX_DH_GRP14_SHA256:
  	case KEX_DH_GRP16_SHA512:
@@ -34,7 +34,7 @@ diff -u openssh-9.3p1.orig/kexgen.c openssh-9.3p1/kexgen.c
 +
  		r = kex_dh_keypair(kex);
 +
-+		DH_get0_pqg(ssh->kex->dh, &dh_p, NULL, &dh_g);
++		DH_get0_pqg(kex->dh, &dh_p, NULL, &dh_g);
 +		p_hex = BN_bn2hex(dh_p);
 +		g_hex = BN_bn2hex(dh_g);
 +
