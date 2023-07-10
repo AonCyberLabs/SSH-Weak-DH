@@ -135,7 +135,7 @@ def check_prime(p_hex):
     if not isPrime(q) or not isPrime(p):
         print("[!] BROKEN. {} is not a safe prime.".format(p_hex))
     else:
-        evaluate_size(p_hex)
+        _evaluate_size(p_hex)
 
 
 def parse_group_exchange(lines, dh_algo):
