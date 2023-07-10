@@ -11,7 +11,7 @@ potentially fails to detect some weak configurations. Moreover, the server
 possibly blocks connections before the scan completes.
 
 For further information about our tool, visit
-[http://blog.gdssecurity.com/labs/2015/8/3/ssh-weak-diffie-hellman-group-identification-tool.html](http://blog.gdssecurity.com/labs/2015/8/3/ssh-weak-diffie-hellman-group-identification-tool.html).
+[https://www.aon.com/cyber-solutions/aon_cyber_labs/ssh-weak-diffie-hellman-group-identification-tool/](https://www.aon.com/cyber-solutions/aon_cyber_labs/ssh-weak-diffie-hellman-group-identification-tool/).
 
 Consult the [Logjam info page](https://weakdh.org/sysadmin.html) for
 suggestions on how to configure SSH servers to protect them as well as their
