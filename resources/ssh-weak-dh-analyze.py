@@ -58,6 +58,7 @@ def dh_sec_level(dh_algo, dh_bits_client, dh_bits_server):
     """
     prints a security ranking for the given Diffie-Hellman group size in bits
     """
+    assert len(dh_bits_client) == 3
     sec_level_str, sec_level_symbol = get_sec_level_tuple(dh_bits_server)
 
     info = (
@@ -108,11 +109,12 @@ def analyze(f):
         lineno += 1
 
 
-def evaluate_size(p_hex):
+def _evaluate_size(p_hex):
     """
     evaluates the size of the given hexadecimal string that represents a safe
     prime
     """
+    # assert isSafePrime(p_hex)
     num_bits = math.ceil(len(p_hex) / 2) * 8
     sec_level_str, sec_level_symbol = get_sec_level_tuple(num_bits)
     print(
