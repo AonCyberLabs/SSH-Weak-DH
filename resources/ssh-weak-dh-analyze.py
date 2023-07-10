@@ -32,6 +32,10 @@ GENERATOR_IDENTIFIER = " generator in hex: "
 
 
 def get_sec_level_tuple(dh_bits):
+    """
+    returns a security ranking for the given number of bits as a tuple
+    consisting of a descriptive string and a representative symbol
+    """
     sec_level_str, sec_level_symbol = "", ""
     if dh_bits < DH_BITS_WEAK:
         sec_level_str, sec_level_symbol = "WEAK", "!"
@@ -52,8 +56,7 @@ def get_sec_level_tuple(dh_bits):
 
 def dh_sec_level(dh_algo, dh_bits_client, dh_bits_server):
     """
-    prints a security ranking for the given Diffie-Hellman group size
-    in bits
+    prints a security ranking for the given Diffie-Hellman group size in bits
     """
     sec_level_str, sec_level_symbol = get_sec_level_tuple(dh_bits_server)
 
