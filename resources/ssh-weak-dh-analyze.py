@@ -12,6 +12,7 @@ Blog: https://blog.gdssecurity.com/labs/2015/8/3/ssh-weak-diffie-hellman-group-i
 Copyright 2015-2018 Gotham Digital Science
 """
 
+import math
 import sys
 from os import listdir
 from os.path import isfile, isdir, join
@@ -30,26 +31,35 @@ PRIME_IDENTIFIER = " prime in hex: "
 GENERATOR_IDENTIFIER = " generator in hex: "
 
 
-def dh_sec_level(dh_algo, dh_bits_client, dh_bits_server):
+def get_sec_level_tuple(dh_bits):
     """
-    prints a security ranking for the given Diffie-Hellman group size
-    in bits
+    returns a security ranking for the given number of bits as a tuple
+    consisting of a descriptive string and a representative symbol
     """
     sec_level_str, sec_level_symbol = "", ""
-    if dh_bits_server < DH_BITS_WEAK:
+    if dh_bits < DH_BITS_WEAK:
         sec_level_str, sec_level_symbol = "WEAK", "!"
-    elif dh_bits_server < DH_BITS_ACADEMIC:
+    elif dh_bits < DH_BITS_ACADEMIC:
         sec_level_str, sec_level_symbol = (
             "WEAK-INTERMEDIATE (might be feasible to break for academic teams)",
             "-",
         )
-    elif dh_bits_server < DH_BITS_NATION:
+    elif dh_bits < DH_BITS_NATION:
         sec_level_str, sec_level_symbol = (
             "INTERMEDIATE (might be feasible to break for nation-states)",
             "*",
         )
     else:
         sec_level_str, sec_level_symbol = "STRONG", "+"
+    return sec_level_str, sec_level_symbol
+
+
+def dh_sec_level(dh_algo, dh_bits_client, dh_bits_server):
+    """
+    prints a security ranking for the given Diffie-Hellman group size in bits
+    """
+    assert len(dh_bits_client) == 3
+    sec_level_str, sec_level_symbol = get_sec_level_tuple(dh_bits_server)
 
     info = (
         "[{}] {}. Algorithm: {}. Negotiated group size in bits: {}. "
@@ -82,7 +92,8 @@ def analyze(f):
     while lineno < len(lines):
         line = lines[lineno]
         if PRIME_IDENTIFIER in line:
-            check_prime(line.split(PRIME_IDENTIFIER)[1])
+            p_hex = line.split(PRIME_IDENTIFIER)[1]
+            check_prime(p_hex)
         elif GENERATOR_IDENTIFIER in line:
             pass
         elif line.startswith(KEX_ALGO):
@@ -98,13 +109,33 @@ def analyze(f):
         lineno += 1
 
 
+def _evaluate_size(p_hex):
+    """
+    evaluates the size of the given hexadecimal string that represents a safe
+    prime
+    """
+    # assert isSafePrime(p_hex)
+    num_bits = math.ceil(len(p_hex) / 2) * 8
+    sec_level_str, sec_level_symbol = get_sec_level_tuple(num_bits)
+    print(
+        "[{}] {}. {} is a safe {}-bit prime.".format(
+            sec_level_symbol, sec_level_str, p_hex, num_bits
+        )
+    )
+
+
 def check_prime(p_hex):
+    """
+    checks whether the given hexadecimal string represents a safe prime
+    """
     p = bytes_to_long(bytes.fromhex(p_hex))
 
     # Check if p is a safe prime
     q = (p - 1) // 2
     if not isPrime(q) or not isPrime(p):
         print("[!] BROKEN. {} is not a safe prime.".format(p_hex))
+    else:
+        _evaluate_size(p_hex)
 
 
 def parse_group_exchange(lines, dh_algo):

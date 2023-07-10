@@ -24,11 +24,11 @@ WORKDIR /app
 RUN apk add --no-cache bash libressl python3 py3-pip
 RUN pip install pipenv
 COPY --from=build /usr/local/bin/ssh .
-COPY resources/Pipfile .
-COPY resources/Pipfile.lock .
 COPY resources/ssh-weak-dh-analyze.py .
 COPY resources/ssh-weak-dh-test.sh .
 COPY resources/configs/ configs/
+COPY resources/Pipfile .
+COPY resources/Pipfile.lock .
 RUN pipenv install
 VOLUME /logs
 ENTRYPOINT ["bash", "ssh-weak-dh-test.sh"]
