@@ -21,14 +21,16 @@ FROM alpine:3.18
 ENV PYTHONUNBUFFERED=1
 ENV LANG=C.UTF-8
 WORKDIR /app
-RUN apk add --no-cache bash libressl python3 py3-pip
-RUN pip install pipenv
 COPY --from=build /usr/local/bin/ssh .
 COPY resources/ssh-weak-dh-analyze.py .
 COPY resources/ssh-weak-dh-test.sh .
 COPY resources/configs/ configs/
 COPY resources/Pipfile .
 COPY resources/Pipfile.lock .
-RUN pipenv install
+RUN apk add --no-cache bash libressl python3 py3-pip && \
+  pip install --no-cache-dir pipenv && \
+  pipenv install --system --deploy --clear && \
+  pip uninstall pipenv -y && \
+  apk del py3-pip
 VOLUME /logs
 ENTRYPOINT ["bash", "ssh-weak-dh-test.sh"]
