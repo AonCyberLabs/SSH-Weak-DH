@@ -47,8 +47,7 @@ standalone tool.
 For example, run the following command to analyze the results of a scan of the
 SSH server running on port 22 on scanme.example.com:
 ```bash
-docker run --rm -v "$(pwd)/logs/":/logs/ -it --entrypoint python3 ssh-weak-dh
-./ssh-weak-dh-analyze.py /logs/scanme.example.com-22/
+docker run --rm -v "$(pwd)/logs/":/logs/ -it --entrypoint python3 ssh-weak-dh ./ssh-weak-dh-analyze.py /logs/scanme.example.com-22/
 ```
 
 It is also possible to run the scan script inside the container shell as
