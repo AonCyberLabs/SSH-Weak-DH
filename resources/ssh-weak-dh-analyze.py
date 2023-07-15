@@ -1,28 +1,31 @@
 #!/usr/bin/env python3
 
 """
-This program analyzes the output produced by the
-OpenSSH client which is patched for analyzing the
-key exchange.
+This program analyzes the output produced by the OpenSSH client which is
+patched for analyzing the key exchange.
 
-SSH-Weak-DH v3.0
+SSH-Weak-DH v4.0
 Fabian Foerg <ffoerg@gdssecurity.com>
 Ron Gutierrez <rgutierrez@gdssecurity.com>
-Blog: https://blog.gdssecurity.com/labs/2015/8/3/ssh-weak-diffie-hellman-group-identification-tool.html
-Copyright 2015-2018 Gotham Digital Science
+Blog: https://www.aon.com/cyber-solutions/aon_cyber_labs/ssh-weak-diffie-hellman-group-identification-tool/
+Copyright 2015-2023 Gotham Digital Science
 """
 
-import math
-import sys
+from Crypto.Util.number import bytes_to_long, isPrime
 from os import listdir
 from os.path import isfile, isdir, join
+import json
+import math
 import re
+import sys
 import textwrap
-from Crypto.Util.number import bytes_to_long, isPrime
 
+# Parameters for Diffie-Hellman groups
 DH_BITS_WEAK = 768
 DH_BITS_ACADEMIC = 1024
 DH_BITS_NATION = 1536
+
+# Keys in scan output
 KEX_ALGO = "KEX algorithm chosen: "
 DH_GROUP_BIT_CLIENT = "KEX client group sizes: "
 DH_GROUP_BIT_SERVER = "KEX server-chosen group size in bits: "
@@ -31,7 +34,64 @@ PRIME_IDENTIFIER = " prime in hex: "
 GENERATOR_IDENTIFIER = " generator in hex: "
 
 
-def get_sec_level_tuple(dh_bits):
+# Load common groups with metadata from file:
+def _parse_common_groups_file(filename):
+    """
+    returns a dictionary populated with common prime numbers as keys and
+    metadata as values
+    """
+    if not isfile(filename):
+        print("Expected common groups file under", filename)
+        exit(1)
+
+    objects = {}
+    with open(filename, "r") as file:
+        objects = json.load(file)
+
+    result = {}
+
+    for common_group in objects["data"]:
+        group_meta = {
+            "generator": common_group["g"],
+            "is_prime": common_group["prime"],
+            "is_safe_prime": common_group["safe_prime"],
+            "name": common_group["name"],
+            "num_bits": common_group["length"],
+        }
+        result[common_group["p"]] = group_meta
+
+    return result
+
+
+COMMON_GROUPS = _parse_common_groups_file("common.json")
+
+
+def _check_group(n_hex):
+    """
+    checks whether the given hexadecimal string represents a safe prime and
+    whether it is a common group
+    """
+    p = bytes_to_long(bytes.fromhex(n_hex))
+
+    # Check if p is a safe prime
+    q = (p - 1) // 2
+
+    if not isPrime(q) or not isPrime(p):
+        print("[!] BROKEN. {} is not a safe prime.".format(n_hex))
+    else:
+        num_bits = math.ceil(len(n_hex) / 2) * 8
+        sec_level_str, sec_level_symbol = _get_sec_level_tuple(num_bits)
+        name = COMMON_GROUPS[p]["name"] if p in COMMON_GROUPS else None
+        name_message = " named {}".format(name) if name else ""
+
+        print(
+            "[{}] {}. {} is a safe {}-bit prime{}.".format(
+                sec_level_symbol, sec_level_str, n_hex, num_bits, name_message
+            )
+        )
+
+
+def _get_sec_level_tuple(dh_bits):
     """
     returns a security ranking for the given number of bits as a tuple
     consisting of a descriptive string and a representative symbol
@@ -54,12 +114,12 @@ def get_sec_level_tuple(dh_bits):
     return sec_level_str, sec_level_symbol
 
 
-def dh_sec_level(dh_algo, dh_bits_client, dh_bits_server):
+def _dh_sec_level(dh_algo, dh_bits_client, dh_bits_server):
     """
     prints a security ranking for the given Diffie-Hellman group size in bits
     """
     assert len(dh_bits_client) == 3
-    sec_level_str, sec_level_symbol = get_sec_level_tuple(dh_bits_server)
+    sec_level_str, sec_level_symbol = _get_sec_level_tuple(dh_bits_server)
 
     info = (
         "[{}] {}. Algorithm: {}. Negotiated group size in bits: {}. "
@@ -76,7 +136,26 @@ def dh_sec_level(dh_algo, dh_bits_client, dh_bits_server):
     print(info)
 
 
-def analyze(f):
+def _parse_group_exchange(lines, dh_algo):
+    """
+    parses the two given lines for Diffie-Hellman group exchange parameters
+    """
+    assert len(lines) == 2
+
+    fst = lines[0]
+    snd = lines[1]
+
+    if fst.startswith(DH_GROUP_BIT_CLIENT) and snd.startswith(DH_GROUP_BIT_SERVER):
+        dh_bits_client = [int(s) for s in re.split("\s+|\s*,\s*", fst) if s.isdigit()]
+        dh_bits_server = [int(s) for s in snd.split() if s.isdigit()]
+
+        if len(dh_bits_client) == 3 and len(dh_bits_server) == 1:
+            _dh_sec_level(dh_algo, dh_bits_client, dh_bits_server[0])
+        else:
+            print("Error: Cannot parse client parameters or server group size!")
+
+
+def _analyze(f):
     """
     analyze the given file, looking for Diffie-Hellman group sizes and
     algorithm
@@ -93,7 +172,7 @@ def analyze(f):
         line = lines[lineno]
         if PRIME_IDENTIFIER in line:
             p_hex = line.split(PRIME_IDENTIFIER)[1]
-            check_prime(p_hex)
+            _check_group(p_hex)
         elif GENERATOR_IDENTIFIER in line:
             pass
         elif line.startswith(KEX_ALGO):
@@ -103,61 +182,13 @@ def analyze(f):
             # DH GEX methods (the client does not propose group sizes, since
             # the group is fixed).
             if dh_algo == DH_GROUP1:
-                dh_sec_level(dh_algo, [1024, 1024, 1024], 1024)
+                _dh_sec_level(dh_algo, [1024, 1024, 1024], 1024)
         elif (lineno + 2) <= len(lines):
-            parse_group_exchange(lines[lineno : lineno + 2], dh_algo)
+            _parse_group_exchange(lines[lineno : lineno + 2], dh_algo)
         lineno += 1
 
 
-def _evaluate_size(p_hex):
-    """
-    evaluates the size of the given hexadecimal string that represents a safe
-    prime
-    """
-    # assert isSafePrime(p_hex)
-    num_bits = math.ceil(len(p_hex) / 2) * 8
-    sec_level_str, sec_level_symbol = get_sec_level_tuple(num_bits)
-    print(
-        "[{}] {}. {} is a safe {}-bit prime.".format(
-            sec_level_symbol, sec_level_str, p_hex, num_bits
-        )
-    )
-
-
-def check_prime(p_hex):
-    """
-    checks whether the given hexadecimal string represents a safe prime
-    """
-    p = bytes_to_long(bytes.fromhex(p_hex))
-
-    # Check if p is a safe prime
-    q = (p - 1) // 2
-    if not isPrime(q) or not isPrime(p):
-        print("[!] BROKEN. {} is not a safe prime.".format(p_hex))
-    else:
-        _evaluate_size(p_hex)
-
-
-def parse_group_exchange(lines, dh_algo):
-    """
-    parses the two given lines for Diffie-Hellman group exchange parameters
-    """
-    assert len(lines) == 2
-
-    fst = lines[0]
-    snd = lines[1]
-
-    if fst.startswith(DH_GROUP_BIT_CLIENT) and snd.startswith(DH_GROUP_BIT_SERVER):
-        dh_bits_client = [int(s) for s in re.split("\s+|\s*,\s*", fst) if s.isdigit()]
-        dh_bits_server = [int(s) for s in snd.split() if s.isdigit()]
-
-        if len(dh_bits_client) == 3 and len(dh_bits_server) == 1:
-            dh_sec_level(dh_algo, dh_bits_client, dh_bits_server[0])
-        else:
-            print("Error: Cannot parse client parameters or server group size!")
-
-
-def walk_dir(d):
+def _walk_dir(d):
     """
     analyze all files in the given directory
     """
@@ -165,7 +196,7 @@ def walk_dir(d):
     for f in subdirs:
         path = join(d, f)
         if isfile(path):
-            analyze(path)
+            _analyze(path)
 
 
 def main():
@@ -175,7 +206,7 @@ def main():
     args = sys.argv
 
     if len(args) != 2:
-        print("Syntax: python -u", args[0], "directory")
+        print("Syntax: python3 -u", args[0], "directory")
         exit(1)
     else:
         directory = args[1]
@@ -184,7 +215,7 @@ def main():
         print("The given parameter is not a directory: ", directory)
         exit(1)
 
-    walk_dir(directory)
+    _walk_dir(directory)
 
     print("")
     print(
