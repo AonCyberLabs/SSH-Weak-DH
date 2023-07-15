@@ -45,13 +45,13 @@ results stored in the aforementioned subfolder.  This analysis script is a
 standalone tool.
 
 For example, run the following command to analyze the results of a scan of the
-SSH server running on port 22 on scanme.example.com:
+SSH server running on port 22 on scanme.example.com inside a container shell:
 ```bash
-docker run --rm -v "$(pwd)/logs/":/logs/ --entrypoint python3 ssh-weak-dh -u ssh-weak-dh-analyze.py /logs/scanme.example.com-22/
+docker run --rm -v "$(pwd)/logs/":/logs/ -it --entrypoint bash ssh-weak-dh
+python3 -u ssh-weak-dh-analyze.py /logs/scanme.example.com-22/
 ```
 
-It is also possible to run the scan script inside the container shell as
-follows:
+It is also possible to run the scan script inside a container shell as follows:
 ```bash
 docker run --rm -v "$(pwd)/logs/":/logs/ -it --entrypoint bash ssh-weak-dh
 ./ssh-weak-dh-test.sh hostname [port]
