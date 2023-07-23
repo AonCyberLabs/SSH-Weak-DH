@@ -91,6 +91,18 @@ def _check_group(n_hex):
         )
 
 
+def _check_generator(g_hex, p_hex):
+    """
+    checks whether 1 < g < p - 1 where g and p are the integers represented by
+    the given first and second hexadecimal string arguments, respectively
+    """
+    g = bytes_to_long(bytes.fromhex(g_hex))
+    p = bytes_to_long(bytes.fromhex(p_hex))
+
+    if g <= 1 or g >= (p - 1):
+        print("[!] BROKEN. {} must not be used as a generator.".format(g_hex))
+
+
 def _get_sec_level_tuple(dh_bits):
     """
     returns a security ranking for the given number of bits as a tuple
@@ -167,6 +179,7 @@ def _analyze(f):
     dh_algo = ""
     dh_bits_client = (0, 0, 0)
     dh_bits_server = 0
+    p_hex = None
 
     while lineno < len(lines):
         line = lines[lineno]
@@ -174,7 +187,10 @@ def _analyze(f):
             p_hex = line.split(PRIME_IDENTIFIER)[1]
             _check_group(p_hex)
         elif GENERATOR_IDENTIFIER in line:
-            pass
+            assert p_hex
+            g_hex = line.split(GENERATOR_IDENTIFIER)[1]
+            _check_generator(g_hex, p_hex)
+            p_hex = None
         elif line.startswith(KEX_ALGO):
             dh_algo = line[len(KEX_ALGO) :].strip()
             # Treat DH group1 (Oakley Group 2) individually, since it is
