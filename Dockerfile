@@ -1,4 +1,4 @@
-FROM alpine:3.18 AS build
+FROM alpine:3.19 AS build
 WORKDIR /usr/local/src/ssh
 COPY resources/openssh.patch .
 RUN OPENSSH_VERSION='9.3p1' && \
@@ -19,7 +19,7 @@ RUN OPENSSH_VERSION='9.3p1' && \
 WORKDIR /usr/local/src/dh-groups
 RUN curl -s -S -L -O 'https://raw.githubusercontent.com/cryptosense/diffie-hellman-groups/04610a10e13db3a69c740bebac9cb26d53c520d3/gen/common.json'
 
-FROM alpine:3.18
+FROM alpine:3.19
 ENV PYTHONUNBUFFERED=1
 ENV LANG=C.UTF-8
 WORKDIR /app
@@ -30,7 +30,8 @@ COPY resources/configs/ configs/
 COPY resources/Pipfile .
 COPY resources/Pipfile.lock .
 COPY --from=build /usr/local/src/dh-groups/common.json .
-RUN apk add --no-cache bash libressl python3 py3-pip && \
+RUN apk add --no-cache bash libressl3.8-libcrypto python3 py3-pip && \
+  rm /usr/lib/python3.*/EXTERNALLY-MANAGED && \
   pip install --no-cache-dir pipenv && \
   pipenv install --system --deploy --clear && \
   pip uninstall pipenv -y && \
