@@ -1,4 +1,4 @@
-FROM alpine:3.19 AS build
+FROM alpine:3.20 AS build
 WORKDIR /usr/local/src/ssh
 COPY resources/openssh.patch .
 RUN OPENSSH_VERSION='9.8p1' && \
@@ -19,7 +19,7 @@ RUN OPENSSH_VERSION='9.8p1' && \
 WORKDIR /usr/local/src/dh-groups
 RUN curl -s -S -L -O 'https://raw.githubusercontent.com/cryptosense/diffie-hellman-groups/04610a10e13db3a69c740bebac9cb26d53c520d3/gen/common.json'
 
-FROM alpine:3.19
+FROM alpine:3.20
 ENV PYTHONUNBUFFERED=1
 ENV LANG=C.UTF-8
 WORKDIR /app

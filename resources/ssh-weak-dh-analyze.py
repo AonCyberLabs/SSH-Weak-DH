@@ -158,7 +158,7 @@ def _parse_group_exchange(lines, dh_algo):
     snd = lines[1]
 
     if fst.startswith(DH_GROUP_BIT_CLIENT) and snd.startswith(DH_GROUP_BIT_SERVER):
-        dh_bits_client = [int(s) for s in re.split("\s+|\s*,\s*", fst) if s.isdigit()]
+        dh_bits_client = [int(s) for s in re.split(r"\s+|\s*,\s*", fst) if s.isdigit()]
         dh_bits_server = [int(s) for s in snd.split() if s.isdigit()]
 
         if len(dh_bits_client) == 3 and len(dh_bits_server) == 1:
