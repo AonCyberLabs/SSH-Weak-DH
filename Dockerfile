@@ -1,11 +1,11 @@
 FROM alpine:3.19 AS build
 WORKDIR /usr/local/src/ssh
 COPY resources/openssh.patch .
-RUN OPENSSH_VERSION='9.3p1' && \
-    ARCHIVE_SHA_256='e9baba7701a76a51f3d85a62c383a3c9dcd97fa900b859bc7db114c1868af8a8' && \
+RUN OPENSSH_VERSION='9.8p1' && \
+    ARCHIVE_SHA_256='dd8bd002a379b5d499dfb050dd1fa9af8029e80461f4bb6c523c49973f5a39f3' && \
     apk add --virtual .build-deps \
       build-base curl libressl-dev linux-headers zlib-dev && \
-    curl -s -S -L -O "https://ftp.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-${OPENSSH_VERSION}.tar.gz" && \
+    curl -s -S -L -O "https://cdn.openbsd.org/pub/OpenBSD/OpenSSH/portable/openssh-${OPENSSH_VERSION}.tar.gz" && \
     CHECKSUM=$(sha256sum "openssh-${OPENSSH_VERSION}.tar.gz" | awk '{print $1;}') && \
     echo "Checksum is $CHECKSUM" && \
     [ "$CHECKSUM" = "$ARCHIVE_SHA_256" ] && \

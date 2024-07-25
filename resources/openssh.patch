@@ -1,72 +1,74 @@
-Common subdirectories: openssh-9.3p1.orig/.github and openssh-9.3p1/.github
-Only in openssh-9.3p1/: .vscode
-Common subdirectories: openssh-9.3p1.orig/contrib and openssh-9.3p1/contrib
-diff -u openssh-9.3p1.orig/kex.c openssh-9.3p1/kex.c
---- openssh-9.3p1.orig/kex.c	2023-06-18 11:30:13.000000000 -0400
-+++ openssh-9.3p1/kex.c	2023-06-19 14:44:37.000000000 -0400
-@@ -902,6 +902,8 @@
+Common subdirectories: openssh-9.8p1.orig/contrib and openssh-9.8p1/contrib
+Common subdirectories: openssh-9.8p1.orig/.github and openssh-9.8p1/.github
+diff -u openssh-9.8p1.orig/kex.c openssh-9.8p1/kex.c
+--- openssh-9.8p1.orig/kex.c	2024-07-25 14:35:24.641435069 -0400
++++ openssh-9.8p1/kex.c	2024-07-25 14:56:08.026930058 -0400
+@@ -860,6 +860,8 @@
+ static int
+ choose_kex(struct kex *k, char *client, char *server)
  {
- 	const struct kexalg *kexalg;
- 
 +	fprintf(stderr, "KEX proposal client: %s\nKEX proposal server: %s\n",
 +		client, server);
  	k->name = match_list(client, server, NULL);
  
  	debug("kex: algorithm: %s", k->name ? k->name : "(no match)");
-@@ -914,6 +916,7 @@
- 	k->kex_type = kexalg->type;
- 	k->hash_alg = kexalg->hash_alg;
- 	k->ec_nid = kexalg->ec_nid;
+@@ -872,6 +874,7 @@
+ 	k->kex_type = kex_type_from_name(k->name);
+ 	k->hash_alg = kex_hash_from_name(k->name);
+ 	k->ec_nid = kex_nid_from_name(k->name);
 +	fprintf(stderr, "KEX algorithm chosen: %s\n", k->name);
  	return 0;
  }
  
-diff -u openssh-9.3p1.orig/kexgen.c openssh-9.3p1/kexgen.c
---- openssh-9.3p1.orig/kexgen.c	2023-06-18 11:30:13.000000000 -0400
-+++ openssh-9.3p1/kexgen.c	2023-07-09 19:52:07.000000000 -0400
+diff -u openssh-9.8p1.orig/kexgen.c openssh-9.8p1/kexgen.c
+--- openssh-9.8p1.orig/kexgen.c	2024-07-25 14:35:24.641435069 -0400
++++ openssh-9.8p1/kexgen.c	2024-07-25 14:52:57.925432708 -0400
 @@ -108,7 +108,22 @@
  	case KEX_DH_GRP14_SHA256:
  	case KEX_DH_GRP16_SHA512:
  	case KEX_DH_GRP18_SHA512:
-+	{
-+		const BIGNUM *dh_p, *dh_g;
-+		char *p_hex, *g_hex;
-+
- 		r = kex_dh_keypair(kex);
-+
-+		DH_get0_pqg(kex->dh, &dh_p, NULL, &dh_g);
-+		p_hex = BN_bn2hex(dh_p);
-+		g_hex = BN_bn2hex(dh_g);
-+
-+		fprintf(stderr, "KEX group prime in hex: %s\n", p_hex);
-+		fprintf(stderr, "KEX group generator in hex: %s\n", g_hex);
-+
-+		OPENSSL_free(p_hex);
-+		OPENSSL_free(g_hex);
-+	}
+-		r = kex_dh_keypair(kex);
++        {
++                const BIGNUM *dh_p, *dh_g;
++                char *p_hex, *g_hex;
++ 
++                r = kex_dh_keypair(kex);
++ 
++                DH_get0_pqg(kex->dh, &dh_p, NULL, &dh_g);
++                p_hex = BN_bn2hex(dh_p);
++                g_hex = BN_bn2hex(dh_g);
++ 
++                fprintf(stderr, "KEX group prime in hex: %s\n", p_hex);
++                fprintf(stderr, "KEX group generator in hex: %s\n", g_hex);
++ 
++                OPENSSL_free(p_hex);
++                OPENSSL_free(g_hex);
++        }
  		break;
  	case KEX_ECDH_SHA2:
  		r = kex_ecdh_keypair(kex);
-diff -u openssh-9.3p1.orig/kexgexc.c openssh-9.3p1/kexgexc.c
---- openssh-9.3p1.orig/kexgexc.c	2023-06-18 11:30:13.000000000 -0400
-+++ openssh-9.3p1/kexgexc.c	2023-07-09 17:55:45.000000000 -0400
-@@ -65,9 +65,12 @@
+diff -u openssh-9.8p1.orig/kexgexc.c openssh-9.8p1/kexgexc.c
+--- openssh-9.8p1.orig/kexgexc.c	2024-07-25 14:35:24.641435069 -0400
++++ openssh-9.8p1/kexgexc.c	2024-07-25 15:00:23.535476566 -0400
+@@ -65,11 +65,12 @@
  
  	nbits = dh_estimate(kex->dh_need * 8);
  
 -	kex->min = DH_GRP_MIN;
 -	kex->max = DH_GRP_MAX;
 -	kex->nbits = nbits;
+-	if (ssh->compat & SSH_BUG_DHGEX_LARGE)
+-		kex->nbits = MINIMUM(kex->nbits, 4096);
 +	/*
-+	 * Key bit parameters are already taken from command-line.
-+	 * Take the estimated nbits only if the command-line provided value is too small.
-+	 */
-+	if (kex->nbits < kex->min)
-+		kex->nbits = nbits;
- 	if (ssh->compat & SSH_BUG_DHGEX_LARGE)
- 		kex->nbits = MINIMUM(kex->nbits, 4096);
++         * Key bit parameters are already taken from command-line.
++         * Take the estimated nbits only if the command-line provided value is too small.
++         */
++        if (kex->nbits < kex->min)
++                kex->nbits = nbits;
  	/* New GEX request */
-@@ -79,10 +82,8 @@
+ 	if ((r = sshpkt_start(ssh, SSH2_MSG_KEX_DH_GEX_REQUEST)) != 0 ||
+ 	    (r = sshpkt_put_u32(ssh, kex->min)) != 0 ||
+@@ -79,10 +80,8 @@
  		goto out;
  	debug("SSH2_MSG_KEX_DH_GEX_REQUEST(%u<%u<%u) sent",
  	    kex->min, kex->nbits, kex->max);
@@ -75,11 +77,11 @@ diff -u openssh-9.3p1.orig/kexgexc.c openssh-9.3p1/kexgexc.c
 -	    kex->min, kex->nbits, kex->max);
 -#endif
 +	fprintf(stderr, "KEX client group sizes: min = %d, nbits = %d, max = %d\n",
-+		kex->min, kex->nbits, kex->max);
++            kex->min, kex->nbits, kex->max);
  	debug("expecting SSH2_MSG_KEX_DH_GEX_GROUP");
  	ssh_dispatch_set(ssh, SSH2_MSG_KEX_DH_GEX_GROUP,
  	    &input_kex_dh_gex_group);
-@@ -96,6 +97,7 @@
+@@ -96,6 +95,7 @@
  {
  	struct kex *kex = ssh->kex;
  	BIGNUM *p = NULL, *g = NULL;
@@ -87,7 +89,7 @@ diff -u openssh-9.3p1.orig/kexgexc.c openssh-9.3p1/kexgexc.c
  	const BIGNUM *pub_key;
  	int r, bits;
  
-@@ -115,8 +117,17 @@
+@@ -115,8 +115,17 @@
  		r = SSH_ERR_ALLOC_FAIL;
  		goto out;
  	}
@@ -105,12 +107,12 @@ diff -u openssh-9.3p1.orig/kexgexc.c openssh-9.3p1/kexgexc.c
  	/* generate and send 'e', client DH public key */
  	if ((r = dh_gen_key(kex->dh, kex->we_need * 8)) != 0)
  		goto out;
-Common subdirectories: openssh-9.3p1.orig/m4 and openssh-9.3p1/m4
-Common subdirectories: openssh-9.3p1.orig/openbsd-compat and openssh-9.3p1/openbsd-compat
-diff -u openssh-9.3p1.orig/readconf.c openssh-9.3p1/readconf.c
---- openssh-9.3p1.orig/readconf.c	2023-06-18 11:30:13.000000000 -0400
-+++ openssh-9.3p1/readconf.c	2023-06-19 14:42:55.000000000 -0400
-@@ -66,6 +66,7 @@
+Common subdirectories: openssh-9.8p1.orig/m4 and openssh-9.8p1/m4
+Common subdirectories: openssh-9.8p1.orig/openbsd-compat and openssh-9.8p1/openbsd-compat
+diff -u openssh-9.8p1.orig/readconf.c openssh-9.8p1/readconf.c
+--- openssh-9.8p1.orig/readconf.c	2024-07-25 14:35:24.648435637 -0400
++++ openssh-9.8p1/readconf.c	2024-07-25 14:46:14.555306183 -0400
+@@ -70,6 +70,7 @@
  #include "uidswap.h"
  #include "myproposal.h"
  #include "digest.h"
@@ -118,22 +120,22 @@ diff -u openssh-9.3p1.orig/readconf.c openssh-9.3p1/readconf.c
  
  /* Format of the configuration file:
  
-@@ -2438,6 +2439,10 @@
- 	options->known_hosts_command = NULL;
- 	options->required_rsa_size = -1;
- 	options->enable_escape_commandline = -1;
-+	/* Default values taken from dh.h */
-+	options->dh_minbits = DH_GRP_MIN;
-+	options->dh_nbits = 0;
-+	options->dh_maxbits = DH_GRP_MAX;
+@@ -2644,6 +2645,10 @@
+ 	options->tag = NULL;
+ 	options->channel_timeouts = NULL;
+ 	options->num_channel_timeouts = 0;
++        /* Default values taken from dh.h */
++        options->dh_minbits = DH_GRP_MIN;
++        options->dh_nbits = 0;
++        options->dh_maxbits = DH_GRP_MAX;
  }
  
  /*
-diff -u openssh-9.3p1.orig/readconf.h openssh-9.3p1/readconf.h
---- openssh-9.3p1.orig/readconf.h	2023-06-18 11:30:13.000000000 -0400
-+++ openssh-9.3p1/readconf.h	2023-06-19 14:42:37.000000000 -0400
-@@ -181,6 +181,11 @@
- 	int	enable_escape_commandline;	/* ~C commandline */
+diff -u openssh-9.8p1.orig/readconf.h openssh-9.8p1/readconf.h
+--- openssh-9.8p1.orig/readconf.h	2024-07-25 14:35:24.648435637 -0400
++++ openssh-9.8p1/readconf.h	2024-07-25 14:45:04.590472568 -0400
+@@ -186,6 +186,11 @@
+ 	u_int	num_channel_timeouts;
  
  	char	*ignored_unknown; /* Pattern list of unknown tokens to ignore */
 +
@@ -144,11 +146,11 @@ diff -u openssh-9.3p1.orig/readconf.h openssh-9.3p1/readconf.h
  }       Options;
  
  #define SSH_PUBKEY_AUTH_NO	0x00
-Common subdirectories: openssh-9.3p1.orig/regress and openssh-9.3p1/regress
-diff -u openssh-9.3p1.orig/ssh.c openssh-9.3p1/ssh.c
---- openssh-9.3p1.orig/ssh.c	2023-06-18 11:30:13.000000000 -0400
-+++ openssh-9.3p1/ssh.c	2023-06-19 14:42:14.000000000 -0400
-@@ -173,6 +173,21 @@
+Common subdirectories: openssh-9.8p1.orig/regress and openssh-9.8p1/regress
+diff -u openssh-9.8p1.orig/ssh.c openssh-9.8p1/ssh.c
+--- openssh-9.8p1.orig/ssh.c	2024-07-25 14:35:24.662436773 -0400
++++ openssh-9.8p1/ssh.c	2024-07-25 14:44:24.826702246 -0400
+@@ -174,6 +174,21 @@
  extern int muxserver_sock;
  extern u_int muxclient_command;
  
@@ -170,7 +172,7 @@ diff -u openssh-9.3p1.orig/ssh.c openssh-9.3p1/ssh.c
  /* Prints a help message to the user.  This function never returns. */
  
  static void
-@@ -643,6 +658,7 @@
+@@ -681,6 +696,7 @@
  	size_t n, len;
  	u_int j;
  	struct ssh_conn_info *cinfo = NULL;
@@ -178,51 +180,82 @@ diff -u openssh-9.3p1.orig/ssh.c openssh-9.3p1/ssh.c
  
  	/* Ensure that fds 0, 1 and 2 are open or directed to /dev/null */
  	sanitise_stdfd();
-@@ -707,7 +723,7 @@
+@@ -745,7 +761,7 @@
  	argv0 = av[0];
  
   again:
 -	while ((opt = getopt(ac, av, "1246ab:c:e:fgi:kl:m:no:p:qstvx"
 +	while ((opt = getopt(ac, av, "1246ab:c:d:e:fgi:kl:m:no:p:qstvx"
- 	    "AB:CD:E:F:GI:J:KL:MNO:PQ:R:S:TVw:W:XYy")) != -1) { /* HUZdhjruz */
+ 	    "AB:CD:E:F:GI:J:KL:MNO:P:Q:R:S:TVw:W:XYy")) != -1) { /* HUZdhjruz */
  		switch (opt) {
  		case '1':
-@@ -1054,6 +1070,31 @@
+@@ -1098,6 +1114,31 @@
  		case 'F':
  			config = optarg;
  			break;
-+ 		case 'd':
-+ 			subopts = optarg;
-+ 			while (*subopts != '\0') {
-+ 			  switch (getsubopt(&subopts, dh_bit_opts, &value)) {
-+ 			    case DH_MIN_BITS:
-+ 			      if (value == NULL)
-+ 				abort();
-+ 			      options.dh_minbits = atoi(value);
-+ 			      break;
-+ 			    case DH_N_BITS:
-+ 			      if (value == NULL)
-+ 				abort();
-+ 			      options.dh_nbits = atoi(value);
-+ 			      break;
-+ 			    case DH_MAX_BITS:
-+ 			      if (value == NULL)
-+ 				abort();
-+ 			      options.dh_maxbits = atoi(value);
-+ 			      break;
-+ 			    default:
-+ 			      fprintf(stderr, "Unknown -d suboption\n");
-+ 			      break;
-+ 			  }
-+			}
-+ 			break;
++                case 'd':
++                        subopts = optarg;
++                        while (*subopts != '\0') {
++                          switch (getsubopt(&subopts, dh_bit_opts, &value)) {
++                            case DH_MIN_BITS:
++                              if (value == NULL)
++                                abort();
++                              options.dh_minbits = atoi(value);
++                              break;
++                            case DH_N_BITS:
++                              if (value == NULL)
++                                abort();
++                              options.dh_nbits = atoi(value);
++                              break;
++                            case DH_MAX_BITS:
++                              if (value == NULL)
++                                abort();
++                              options.dh_maxbits = atoi(value);
++                              break;
++                            default:
++                              fprintf(stderr, "Unknown -d suboption\n");
++                              break;
++                          }
++                        }
++                        break;
  		default:
  			usage();
  		}
-diff -u openssh-9.3p1.orig/sshconnect.c openssh-9.3p1/sshconnect.c
---- openssh-9.3p1.orig/sshconnect.c	2023-06-18 11:30:13.000000000 -0400
-+++ openssh-9.3p1/sshconnect.c	2023-07-09 17:38:47.000000000 -0400
-@@ -1555,12 +1555,8 @@
+diff -u openssh-9.8p1.orig/sshconnect2.c openssh-9.8p1/sshconnect2.c
+--- openssh-9.8p1.orig/sshconnect2.c	2024-07-25 14:35:24.663436854 -0400
++++ openssh-9.8p1/sshconnect2.c	2024-07-25 14:37:58.318542429 -0400
+@@ -276,6 +276,11 @@
+ 	ssh->kex->kex[KEX_KEM_SNTRUP761X25519_SHA512] = kex_gen_client;
+ 	ssh->kex->verify_host_key=&verify_host_key_callback;
+ 
++	/* Take key bit parameters from command line. */
++	ssh->kex->min = options.dh_minbits;
++	ssh->kex->max = options.dh_maxbits;
++	ssh->kex->nbits = options.dh_nbits;
++
+ 	ssh_dispatch_run_fatal(ssh, DISPATCH_BLOCK, &ssh->kex->done);
+ 	kex_proposal_free_entries(myproposal);
+ 
+@@ -476,6 +481,7 @@
+ 
+ 	if (!authctxt.success)
+ 		fatal("Authentication failed.");
++	/*
+ 	if (ssh_packet_connection_is_on_socket(ssh)) {
+ 		verbose("Authenticated to %s ([%s]:%d) using \"%s\".", host,
+ 		    ssh_remote_ipaddr(ssh), ssh_remote_port(ssh),
+@@ -484,6 +490,7 @@
+ 		verbose("Authenticated to %s (via proxy) using \"%s\".", host,
+ 		    authctxt.method->name);
+ 	}
++	*/
+ }
+ 
+ static int
+diff -u openssh-9.8p1.orig/sshconnect.c openssh-9.8p1/sshconnect.c
+--- openssh-9.8p1.orig/sshconnect.c	2024-07-25 14:35:24.663436854 -0400
++++ openssh-9.8p1/sshconnect.c	2024-07-25 14:39:29.270417597 -0400
+@@ -1593,12 +1593,8 @@
      const struct ssh_conn_info *cinfo)
  {
  	char *host;
@@ -235,7 +268,7 @@ diff -u openssh-9.3p1.orig/sshconnect.c openssh-9.3p1/sshconnect.c
  	/* Convert the user-supplied hostname into all lowercase. */
  	host = xstrdup(orighost);
  	lowercase(host);
-@@ -1574,11 +1570,11 @@
+@@ -1612,11 +1608,11 @@
  
  	/* key exchange */
  	/* authenticate user */
@@ -250,34 +283,3 @@ diff -u openssh-9.3p1.orig/sshconnect.c openssh-9.3p1/sshconnect.c
  }
  
  /* print all known host keys for a given host, but skip keys of given type */
-diff -u openssh-9.3p1.orig/sshconnect2.c openssh-9.3p1/sshconnect2.c
---- openssh-9.3p1.orig/sshconnect2.c	2023-06-18 11:30:13.000000000 -0400
-+++ openssh-9.3p1/sshconnect2.c	2023-06-19 14:36:20.000000000 -0400
-@@ -280,6 +280,11 @@
- 	ssh->kex->kex[KEX_KEM_SNTRUP761X25519_SHA512] = kex_gen_client;
- 	ssh->kex->verify_host_key=&verify_host_key_callback;
- 
-+	/* Take key bit parameters from command line. */
-+	ssh->kex->min = options.dh_minbits;
-+	ssh->kex->max = options.dh_maxbits;
-+	ssh->kex->nbits = options.dh_nbits;
-+
- 	ssh_dispatch_run_fatal(ssh, DISPATCH_BLOCK, &ssh->kex->done);
- 
- 	/* remove ext-info from the KEX proposals for rekeying */
-@@ -482,6 +487,7 @@
- 
- 	if (!authctxt.success)
- 		fatal("Authentication failed.");
-+	/*
- 	if (ssh_packet_connection_is_on_socket(ssh)) {
- 		verbose("Authenticated to %s ([%s]:%d) using \"%s\".", host,
- 		    ssh_remote_ipaddr(ssh), ssh_remote_port(ssh),
-@@ -490,6 +496,7 @@
- 		verbose("Authenticated to %s (via proxy) using \"%s\".", host,
- 		    authctxt.method->name);
- 	}
-+	*/
- }
- 
- static int
