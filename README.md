@@ -48,7 +48,8 @@ For example, run the following command to analyze the results of a scan of the
 SSH server running on port 22 on scanme.example.com inside a container shell:
 ```bash
 docker run --rm -v "$(pwd)/logs/":/logs/ -it --entrypoint bash ssh-weak-dh
-python3 -u ssh-weak-dh-analyze.py /logs/scanme.example.com-22/
+source .venv/bin/activate
+ssh-weak-dh-analyze.py /logs/scanme.example.com-22/
 ```
 
 It is also possible to run the scan script inside a container shell as follows:
@@ -60,5 +61,5 @@ where `hostname` and `port` are the scanner arguments as explained before.
 
 # Copyright
 
-Fabian Foerg, Gotham Digital Science, 2015-2023
+Fabian Foerg, Gotham Digital Science, 2015-2025
 
