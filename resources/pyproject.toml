@@ -1,0 +1,9 @@
+[project]
+name = "SSH-Weak-DH"
+version = "4.0"
+description = "Tool that determines whether an SSH server allows a Diffie-Hellman (DH) key exchange based on a weak group"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pycryptodome",
+]
