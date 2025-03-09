@@ -6,6 +6,7 @@ readonly CONFIGS_GROUP_EXCHANGE=(configs/config-dh_gex_sha1 configs/config-dh_ge
 readonly CONFIGS_GROUP_FIXED=(configs/config-group1 configs/config-group14-sha1 configs/config-group14-sha256 configs/config-group16 configs/config-group18)
 readonly BIT_LENGTHS=(512 768 1024 1280 1536 2048)
 readonly OUT_DIR='/logs'
+readonly PYTHON='.venv/bin/python'
 readonly SSH_WEAK_DH_ANALYZE='./ssh-weak-dh-analyze.py'
 
 usage() {
@@ -36,15 +37,6 @@ run() {
   else
     local bit_length=$5
     "$SSH_PATCHED" "${SSH_OPTS[@]}" -d "minbits=${bit_length},nbits=${bit_length},maxbits=${bit_length}" -F "$config" -p "$port" "$target" 2>&1 | tee "${out_prefix}/${out_file_name}_${bit_length}"
-  fi
-}
-
-activate_venv() {
-  if [[ -f ".venv/bin/activate" ]]; then
-    source .venv/bin/activate
-  else
-    echo "Error: .venv/bin/activate does not exist."
-    exit 1
   fi
 }
 
@@ -88,13 +80,12 @@ main() {
     done
   done
 
-  echo ""
-  echo ""
-  echo "Analysis of results:"
-  echo ""
+  echo
+  echo
+  echo 'Analysis of results:'
+  echo
 
-  activate_venv
-  "$SSH_WEAK_DH_ANALYZE" "$out_prefix"
+  "$PYTHON" "$SSH_WEAK_DH_ANALYZE" "$out_prefix"
 }
 
 main "$@"
