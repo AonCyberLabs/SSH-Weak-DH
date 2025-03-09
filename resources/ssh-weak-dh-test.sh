@@ -39,6 +39,15 @@ run() {
   fi
 }
 
+activate_venv() {
+  if [[ -f ".venv/bin/activate" ]]; then
+    source .venv/bin/activate
+  else
+    echo "Error: .venv/bin/activate does not exist."
+    exit 1
+  fi
+}
+
 main() {
   # standard SSH port
   local port=22
@@ -84,7 +93,8 @@ main() {
   echo "Analysis of results:"
   echo ""
 
-  python3 -u "$SSH_WEAK_DH_ANALYZE" "$out_prefix"
+  activate_venv
+  "$SSH_WEAK_DH_ANALYZE" "$out_prefix"
 }
 
 main "$@"

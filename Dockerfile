@@ -18,23 +18,25 @@ RUN OPENSSH_VERSION='9.9p2' && \
     mv ssh /usr/local/bin/
 WORKDIR /usr/local/src/dh-groups
 RUN curl -s -S -L -O 'https://raw.githubusercontent.com/cryptosense/diffie-hellman-groups/04610a10e13db3a69c740bebac9cb26d53c520d3/gen/common.json'
+WORKDIR /app
+COPY resources/.python-version .
+COPY resources/uv.lock .
+COPY resources/pyproject.toml .
+COPY --from=ghcr.io/astral-sh/uv:0.6 /uv /uvx /bin/
+RUN apk add --no-cache python3
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --compile-bytecode --no-install-project --no-editable
 
 FROM alpine:3.21
 ENV PYTHONUNBUFFERED=1
 ENV LANG=C.UTF-8
 WORKDIR /app
 COPY --from=build /usr/local/bin/ssh .
+COPY --from=build /usr/local/src/dh-groups/common.json .
+COPY --from=build --chown=app:app /app/.venv .venv
 COPY resources/ssh-weak-dh-analyze.py .
 COPY resources/ssh-weak-dh-test.sh .
 COPY resources/configs/ configs/
-COPY resources/Pipfile .
-COPY resources/Pipfile.lock .
-COPY --from=build /usr/local/src/dh-groups/common.json .
-RUN apk add --no-cache bash libressl4.0-libcrypto python3 py3-pip && \
-  rm /usr/lib/python3.*/EXTERNALLY-MANAGED && \
-  pip install --no-cache-dir pipenv && \
-  pipenv install --system --deploy --clear && \
-  pip uninstall pipenv -y && \
-  apk del py3-pip
+RUN apk add --no-cache bash libressl4.0-libcrypto python3
 VOLUME /logs
 ENTRYPOINT ["bash", "ssh-weak-dh-test.sh"]
