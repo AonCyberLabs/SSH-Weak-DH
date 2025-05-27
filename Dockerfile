@@ -33,15 +33,19 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 FROM alpine:3.21
 ENV PYTHONUNBUFFERED=1
 ENV LANG=C.UTF-8
-WORKDIR /app
-COPY --from=build /usr/local/src/dh-groups/common.json .
-COPY --from=build /usr/local/bin/ssh .
-COPY --from=build --chown=python:python /python /python
-COPY --from=build --chown=app:app /app/.venv .venv
-COPY resources/ssh-weak-dh-analyze.py .
-COPY resources/ssh-weak-dh-test.sh .
-COPY resources/configs/ configs/
 RUN apk add --no-cache bash libressl4.0-libcrypto
+ARG UID=1000
+ARG GID=1000
+RUN addgroup -g "$GID" -S app && adduser -u "$UID" -G app -S app
+WORKDIR /app
+COPY --from=build --chown=app:app /usr/local/src/dh-groups/common.json .
+COPY --from=build --chown=app:app /usr/local/bin/ssh .
+COPY --from=build /python /python
+COPY --from=build --chown=app:app /app/.venv .venv
+COPY --chown=app:app resources/ssh-weak-dh-analyze.py .
+COPY --chown=app:app resources/ssh-weak-dh-test.sh .
+COPY --chown=app:app resources/configs/ configs/
 ENV PATH="/app/.venv/bin:$PATH"
+USER app
 VOLUME /logs
 ENTRYPOINT ["bash", "ssh-weak-dh-test.sh"]

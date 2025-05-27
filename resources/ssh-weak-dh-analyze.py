@@ -4,11 +4,11 @@
 This program analyzes the output produced by the OpenSSH client which is
 patched for analyzing the key exchange.
 
-SSH-Weak-DH v4.0
+SSH-Weak-DH v4.1
 Fabian Foerg <ffoerg@gdssecurity.com>
 Ron Gutierrez <rgutierrez@gdssecurity.com>
 Blog: https://www.aon.com/cyber-solutions/aon_cyber_labs/ssh-weak-diffie-hellman-group-identification-tool/
-Copyright 2015-2023 Gotham Digital Science
+Copyright 2015-2025 Gotham Digital Science
 """
 
 from Crypto.Util.number import bytes_to_long, isPrime
@@ -18,7 +18,6 @@ import json
 import math
 import re
 import sys
-import textwrap
 
 # Parameters for Diffie-Hellman groups
 DH_BITS_WEAK = 768
@@ -222,10 +221,10 @@ def main():
     args = sys.argv
 
     if len(args) != 2:
-        print("Syntax: python3 -u", args[0], "directory")
+        print("Syntax:", args[0], "directory")
         exit(1)
-    else:
-        directory = args[1]
+
+    directory = args[1]
 
     if not isdir(directory):
         print("The given parameter is not a directory: ", directory)
@@ -235,11 +234,7 @@ def main():
 
     print("")
     print(
-        "\n".join(
-            textwrap.wrap(
-                "WARNING: This tool tests a limited number of configurations and therefore potentially fails to detect some weak configurations. Moreover, the server possibly blocks connections before the scan completes."
-            )
-        )
+        "WARNING: This tool tests a limited set of configurations and might miss some weaknesses. Additionally, the server might block connections before the scan finishes."
     )
 
 

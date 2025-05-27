@@ -21,7 +21,7 @@ clients from attacks exploiting DH key exchanges using a weak group.
 
 Install docker and execute the following command:
 ```bash
-docker build -t ssh-weak-dh .
+docker build --build-arg UID=$(id -u) --build-arg GID=$(id -g) -t ssh-weak-dh .
 ```
 
 # Usage

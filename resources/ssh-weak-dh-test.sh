@@ -6,7 +6,6 @@ readonly CONFIGS_GROUP_EXCHANGE=(configs/config-dh_gex_sha1 configs/config-dh_ge
 readonly CONFIGS_GROUP_FIXED=(configs/config-group1 configs/config-group14-sha1 configs/config-group14-sha256 configs/config-group16 configs/config-group18)
 readonly BIT_LENGTHS=(512 768 1024 1280 1536 2048)
 readonly OUT_DIR='/logs'
-readonly PYTHON='python'
 readonly SSH_WEAK_DH_ANALYZE='./ssh-weak-dh-analyze.py'
 
 usage() {
@@ -85,7 +84,7 @@ main() {
   echo 'Analysis of results:'
   echo
 
-  "$PYTHON" "$SSH_WEAK_DH_ANALYZE" "$out_prefix"
+  "$SSH_WEAK_DH_ANALYZE" "$out_prefix"
 }
 
 main "$@"
