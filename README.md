@@ -1,14 +1,13 @@
 # About
 
-This tool establishes SSH connections to a server, thereby enumerating through
-various client configurations, in order to determine whether the server allows
-a Diffie-Hellman (DH) key exchange based on a weak group.  We hope that our
-tool will be useful to check SSH servers for weak DH key exchange
-configurations.
+This tool creates SSH connections to a server and goes through different client
+configurations to check if the server permits a Diffie-Hellman (DH) key
+exchange using a weak group. We aim for our tool to help assess SSH servers for
+weak DH key exchange settings.
 
-Note that this tool tests a limited number of configurations and therefore
-potentially fails to detect some weak configurations. Moreover, the server
-possibly blocks connections before the scan completes.
+Please be aware that this tool tests a limited set of configurations, which
+might result in some weak configurations going undetected. Additionally, the
+server might block connections before the scan finishes.
 
 For further information about our tool, visit
 [https://www.aon.com/cyber-solutions/aon_cyber_labs/ssh-weak-diffie-hellman-group-identification-tool/](https://www.aon.com/cyber-solutions/aon_cyber_labs/ssh-weak-diffie-hellman-group-identification-tool/).
@@ -19,44 +18,38 @@ clients from attacks exploiting DH key exchanges using a weak group.
 
 # Installation
 
-Install docker and execute the following command:
-```bash
+1. Install Podman or Docker.
+2. Run one of the following commands:
+```shell
+podman build --build-arg UID=$(id -u) --build-arg GID=$(id -g) -t ssh-weak-dh .
 docker build --build-arg UID=$(id -u) --build-arg GID=$(id -g) -t ssh-weak-dh .
 ```
 
 # Usage
 
-Run the following commands:
-```bash
-docker run --rm -v "$(pwd)/logs/":/logs/ ssh-weak-dh hostname [port]
+Run one of the following commands:
+```shell
+podman run --userns=keep-id --rm -v "$(pwd)/logs/":/logs/ ssh-weak-dh host [port]
+docker run --rm -v "$(pwd)/logs/":/logs/ ssh-weak-dh host [port]
 ```
-where `hostname` is the host name or IP address of the SSH server to scan. The
-optional argument `port` allows you to specify the port on which the SSH server
-listens. If the argument is not specified, it will default to `22`.
+- `host`: Hostname or IP address of the SSH server.
+- `port`: Optional SSH server port (default is `22`).
 
-The scan results are printed on stdout.
-
-More detailed results can be found in the `./logs/` directory under the
-subfolder whose name has the form `hostname-port` where `hostname` and `port`
-are the corresponding command line parameters.
+Scan results will be printed to stdout. Detailed results are saved in the
+`./logs/` directory under a subfolder named `host-port`.
 
 The scan tool calls the script `ssh-weak-dh-analyze.py` to analyze the scan
-results stored in the aforementioned subfolder.  This analysis script is a
-standalone tool.
+results stored in the aforementioned subfolder.
 
-For example, run the following command to analyze the results of a scan of the
-SSH server running on port 22 on scanme.example.com inside a container shell:
-```bash
+This analysis script is a standalone tool that can be run as follows:
+```shell
+# Get a container shell:
+podman run --userns=keep-id --rm -v "$(pwd)/logs/":/logs/ -it --entrypoint bash ssh-weak-dh
 docker run --rm -v "$(pwd)/logs/":/logs/ -it --entrypoint bash ssh-weak-dh
-python ssh-weak-dh-analyze.py /logs/scanme.example.com-22/
-```
 
-It is also possible to run the scan script inside a container shell as follows:
-```bash
-docker run --rm -v "$(pwd)/logs/":/logs/ -it --entrypoint bash ssh-weak-dh
-./ssh-weak-dh-test.sh hostname [port]
+# Run the analysis script on logged scan results:
+./ssh-weak-dh-analyze.py /logs/scanme.example.com-22/
 ```
-where `hostname` and `port` are the scanner arguments as explained before.
 
 # Copyright
 
